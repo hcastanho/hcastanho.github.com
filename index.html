@@ -2,7 +2,12 @@
 <html lang="pt-PT">
 <head>
     <meta charset="UTF-8">
-    <title>Hugo Castanho</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Castanho</title>
+    <meta name="description" content="Castanho">
+    <meta name="keywords" content="Castanho, Site Pessoal">
+    <meta name="author" content="Castanho">
+    <meta name="robots" content="index, follow">
     <style>
         body, html {
             margin: 0;
@@ -19,16 +24,24 @@
 <body>
     <canvas id="generativeCanvas"></canvas>
 
-    <script>
-        const canvas = document.getElementById('generativeCanvas');
-        const ctx = canvas.getContext('2d');
+<script>
+    const canvas = document.getElementById('generativeCanvas');
+    const ctx = canvas.getContext('2d');
 
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
-        const colors = ['#6524BF', '#29A655', '#F2BF27', '#F27D16', '#F21616'];
+    const colors = ['#6524BF', '#29A655', '#F2BF27', '#F27D16', '#F21616'];
 
-        function draw() {
+    let lastTime = 0;
+    const animationInterval = 1000 / 10; // 10 frames por segundo
+
+    function draw(currentTime) {
+        const deltaTime = currentTime - lastTime;
+
+        if (deltaTime > animationInterval) {
+            lastTime = currentTime;
+
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             for (let i = 0; i < 100; i++) {
@@ -42,11 +55,12 @@
                 ctx.fillStyle = color;
                 ctx.fill();
             }
-
-            requestAnimationFrame(draw);
         }
 
-        draw();
-    </script>
+        requestAnimationFrame(draw);
+    }
+
+    draw();
+</script>
 </body>
 </html>
