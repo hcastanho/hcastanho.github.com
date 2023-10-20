@@ -2,12 +2,7 @@
 <html lang="pt-PT">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Castanho</title>
-    <meta name="description" content="Castanho">
-    <meta name="keywords" content="Castanho, Site Pessoal">
-    <meta name="author" content="Castanho">
-    <meta name="robots" content="index, follow">
     <style>
         body, html {
             margin: 0;
@@ -24,35 +19,34 @@
 <body>
     <canvas id="generativeCanvas"></canvas>
 
-
-
-   <script>
+    <script>
         const canvas = document.getElementById('generativeCanvas');
         const ctx = canvas.getContext('2d');
+
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
-        const colors = ['#FF5733', '#C70039', '#900C3F', '#581845', '#2C3E50'];
         const colors = ['#6524BF', '#29A655', '#F2BF27', '#F27D16', '#F21616'];
 
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+
             for (let i = 0; i < 100; i++) {
                 const x = Math.random() * canvas.width;
                 const y = Math.random() * canvas.height;
                 const size = Math.random() * 50 + 10;
                 const color = colors[Math.floor(Math.random() * colors.length)];
+
                 ctx.beginPath();
                 ctx.arc(x, y, size, 0, Math.PI * 2);
                 ctx.fillStyle = color;
                 ctx.fill();
             }
+
             requestAnimationFrame(draw);
         }
+
         draw();
     </script>
-    
-
-
 </body>
 </html>
