@@ -25,39 +25,36 @@
     <canvas id="generativeCanvas"></canvas>
 
 
-    <script>
-    const canvas = document.getElementById('generativeCanvas');
-    const ctx = canvas.getContext('2d');
 
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+        <script>
+        const canvas = document.getElementById('generativeCanvas');
+        const ctx = canvas.getContext('2d');
 
-    const colors = ['#6524BF', '#29A655', '#F2BF27', '#F27D16', '#F21616'];
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
 
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const colors = ['#6524BF', '#29A655', '#F2BF27', '#F27D16', '#F21616'];
 
-        for (let i = 0; i < 100; i++) {
-            const x = Math.random() * canvas.width;
-            const y = Math.random() * canvas.height;
-            const size = Math.random() * 50 + 20;
-            const color = colors[Math.floor(Math.random() * colors.length)];
-            const opacity = Math.random(); // Valor de opacidade aleatório
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            ctx.beginPath();
-            ctx.arc(x, y, size, 0, Math.PI * 2);
-            ctx.fillStyle = color;
-            ctx.globalAlpha = opacity; // Configura a opacidade
-            ctx.fill();
-            ctx.globalAlpha = 1; // Restaura a opacidade padrão
+            for (let i = 0; i < 100; i++) {
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                const size = Math.random() * 50 + 10;
+                const color = colors[Math.floor(Math.random() * colors.length)];
+
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fillStyle = color;
+                ctx.fill();
+            }
+
+            requestAnimationFrame(draw);
         }
 
-        requestAnimationFrame(draw);
-    }
-
-    draw();
-</script>
-
+        draw();
+    </script>
     
 
 
