@@ -40,6 +40,9 @@
     <h1>Castanho</h1>
 <canvas id="generativeCanvas"></canvas>
 <script>
+
+        screen.orientation.lock();
+
         const canvas = document.getElementById('generativeCanvas');
         const ctx = canvas.getContext('2d');
         canvas.width = window.innerWidth;
