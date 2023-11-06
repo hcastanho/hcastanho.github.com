@@ -62,6 +62,10 @@
             requestAnimationFrame(draw);
         }
         draw();
+        window.addEventListener("orientationchange", (event) => {
+            draw();
+        });
+
     </script>
 </body>
 </html>
