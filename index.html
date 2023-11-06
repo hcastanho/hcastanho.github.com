@@ -24,7 +24,7 @@
         canvas {
             display: block;
              background-color:#000000;
-        } 
+        }
         h1 {
             width: 100%;
             display: block;
@@ -32,7 +32,7 @@
             top: 20%;
             left: 0;
             text-align: center;
-            font-size: clamp(4.875rem, 20.788vw + -0.28rem, 18.75rem);
+            font-size: 20%;
         }
     </style>
 </head>
@@ -40,9 +40,6 @@
     <h1>Castanho</h1>
 <canvas id="generativeCanvas"></canvas>
 <script>
-
-        screen.orientation.lock();
-
         const canvas = document.getElementById('generativeCanvas');
         const ctx = canvas.getContext('2d');
         canvas.width = window.innerWidth;
