@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Canvas Psicadélico</title>
+</head>
+<body>
+  <canvas id="canvas" width="500" height="500"></canvas>
+
+  <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    // Cria uma função para gerar arte generativa aleatória
+    function gerarArteGenerativa() {
+      // Gera um número aleatório entre 0 e 255 para cada cor RGB
+      const r = Math.floor(Math.random() * 255);
+      const g = Math.floor(Math.random() * 255);
+      const b = Math.floor(Math.random() * 255);
+
+      // Cria uma forma retangular aleatória
+      const x = Math.floor(Math.random() * canvas.width);
+      const y = Math.floor(Math.random() * canvas.height);
+      const width = Math.floor(Math.random() * canvas.width / 2);
+      const height = Math.floor(Math.random() * canvas.height / 2);
+
+      // Desenha a forma retangular
+      ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+      ctx.fillRect(x, y, width, height);
+    }
+
+    // Inicia a animação
+    setInterval(gerarArteGenerativa, 10);
+
+    // Desenha a palavra "CASTANHO" no centro do ecrã
+    ctx.fillStyle = "white";
+    ctx.font = "30px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("CASTANHO", canvas.width / 2, canvas.height / 2);
+  </script>
+</body>
+</html>
