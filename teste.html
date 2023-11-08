@@ -1,43 +1,69 @@
+
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="pt-PT">
 <head>
-  <meta charset="UTF-8">
-  <title>Canvas Psicadélico</title>
+<meta charset="UTF-8">
+<title>Castanho</title>
+<meta name="title" content="Castanho">
+<meta name="description" content="Castanho">
+<meta name="keywords" content="Castanho">
+<meta name="robots" content="index, follow">
+<meta name="language" content="Portuguese">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Arya&family=Barrio&family=Roboto:wght@700&display=swap" rel="stylesheet">
+<style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'roboto', sans-serif;
+            text-transform: uppercase;
+            background-color: #000000;
+        }
+
+        canvas {
+            display: block;
+             background-color:#000000;
+        }
+        h1 {
+            width: 100%;
+            display: block;
+            position: absolute;
+            top: 20%;
+            left: 0;
+            text-align: center;
+            font-size: 30px;
+            text-shadow: 0 0 50px #000;
+        }
+    </style>
 </head>
 <body>
-  <canvas id="canvas" width="500" height="500"></canvas>
+    <h1>Castanho</h1>
+<canvas id="generativeCanvas"></canvas>
+<script>
+        const canvas = document.getElementById('generativeCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const colors = ['#6524BF', '#29A655', '#F2BF27', '#F27D16', '#F21616'];
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < 100; i++) {
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                const size = Math.random() * 80 + 5;
+                const color = colors[Math.floor(Math.random() * colors.length)];
 
-  <script>
-    const canvas = document.getElementById("canvas");
-    const ctx = canvas.getContext("2d");
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fillStyle = color;
+                ctx.fill();
+            }
 
-    // Cria uma função para gerar arte generativa aleatória
-    function gerarArteGenerativa() {
-      // Gera um número aleatório entre 0 e 255 para cada cor RGB
-      const r = Math.floor(Math.random() * 255);
-      const g = Math.floor(Math.random() * 255);
-      const b = Math.floor(Math.random() * 255);
-
-      // Cria uma forma retangular aleatória
-      const x = Math.floor(Math.random() * canvas.width);
-      const y = Math.floor(Math.random() * canvas.height);
-      const width = Math.floor(Math.random() * canvas.width / 2);
-      const height = Math.floor(Math.random() * canvas.height / 2);
-
-      // Desenha a forma retangular
-      ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
-      ctx.fillRect(x, y, width, height);
-    }
-
-    // Inicia a animação
-    setInterval(gerarArteGenerativa, 10);
-
-    // Desenha a palavra "CASTANHO" no centro do ecrã
-    ctx.fillStyle = "white";
-    ctx.font = "30px sans-serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText("CASTANHO", canvas.width / 2, canvas.height / 2);
-  </script>
+            requestAnimationFrame(draw);
+        }
+        draw();
+    </script>
 </body>
 </html>
