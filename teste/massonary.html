@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Masonry</title>
+    <style>
+        .g-6,
+        .gx-6 {
+        --bs-gutter-x: 4.5rem;
+        }
+        .g-6,
+        .gy-6 {
+        --bs-gutter-y: 4.5rem;
+        }
+        @media (min-width: 576px) {
+        .g-sm-6,
+        .gx-sm-6 {
+            --bs-gutter-x: 4.5rem;
+        }
+        .g-sm-6,
+        .gy-sm-6 {
+            --bs-gutter-y: 4.5rem;
+        }
+        }
+        @media (min-width: 768px) {
+        .g-md-6,
+        .gx-md-6 {
+            --bs-gutter-x: 4.5rem;
+        }
+        .g-md-6,
+        .gy-md-6 {
+            --bs-gutter-y: 4.5rem;
+        }
+        }
+        @media (min-width: 992px) {
+        .g-lg-6,
+        .gx-lg-6 {
+            --bs-gutter-x: 4.5rem;
+        }
+        .g-lg-6,
+        .gy-lg-6 {
+            --bs-gutter-y: 4.5rem;
+        }
+        }
+        @media (min-width: 1200px) {
+        .g-xl-6,
+        .gx-xl-6 {
+            --bs-gutter-x: 4.5rem;
+        }
+        .g-xl-6,
+        .gy-xl-6 {
+            --bs-gutter-y: 4.5rem;
+        }
+        }
+        @media (min-width: 1400px) {
+        .g-xxl-6,
+        .gx-xxl-6 {
+            --bs-gutter-x: 4.5rem;
+        }
+        .g-xxl-6,
+        .gy-xxl-6 {
+            --bs-gutter-y: 4.5rem;
+        }
+        }
+        .py-6 {
+        padding-top: 4.5rem !important;
+        padding-bottom: 4.5rem !important;
+        }
+        @media (min-width: 576px) {
+        .py-sm-6 {
+            padding-top: 4.5rem !important;
+            padding-bottom: 4.5rem !important;
+        }
+        }
+        @media (min-width: 768px) {
+        .py-md-6 {
+            padding-top: 4.5rem !important;
+            padding-bottom: 4.5rem !important;
+        }
+        }
+        @media (min-width: 992px) {
+        .py-lg-6 {
+            padding-top: 4.5rem !important;
+            padding-bottom: 4.5rem !important;
+        }
+        }
+        @media (min-width: 1200px) {
+        .py-xl-6 {
+            padding-top: 4.5rem !important;
+            padding-bottom: 4.5rem !important;
+        }
+        }
+        @media (min-width: 1400px) {
+        .py-xxl-6 {
+            padding-top: 4.5rem !important;
+            padding-bottom: 4.5rem !important;
+        }
+        }
+        .hcf-masonry-card {
+        display: block;
+        position: relative;
+        overflow: hidden;
+        }
+        .hcf-masonry-card .card-img {
+        object-fit: cover;
+        transform: scale(1);
+        transition: transform 150ms linear;
+        }
+        .hcf-masonry-card .card-overlay {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        opacity: 0;
+        }
+        .hcf-masonry-card .card-overlay .card-title {
+        display: inline-block;
+        transform: translateY(10px);
+        opacity: 0;
+        }
+        .hcf-masonry-card .card-overlay .card-category {
+        transform: translateY(10px);
+        opacity: 0;
+        }
+        .hcf-masonry-card:hover .card-img {
+        transform: scale(1.05);
+        transition: transform 150ms linear;
+        }
+        .hcf-masonry-card:hover .card-overlay {
+        opacity: 1;
+        transition: opacity 150ms linear;
+        }
+        .hcf-masonry-card:hover .card-overlay .card-title {
+        opacity: 1;
+        transform: translateY(0);
+        transition: transform 150ms linear 0.1s, opacity 150ms linear 0.1s;
+        }
+        .hcf-masonry-card:hover .card-overlay .card-category {
+        opacity: 1;
+        transform: translateY(0);
+        transition: transform 150ms linear 0.2s, opacity 150ms linear 0.2s;
+        }        
+    </style>
+</head>
+<body>
+    HTML<!-- Masonry 1 - HCF Bootstrap 5 Component -->
+    <section class="bg-light py-5 py-xl-6">
+      <div class="container mb-5 mb-md-6">
+        <div class="row justify-content-md-center">
+          <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6 text-center">
+            <h2 class="mb-4 display-5">Masonry Layout</h2>
+            <p class="text-secondary mb-4 mb-md-5">Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Pellentesque et neque id ligula mattis commodo.</p>
+            <hr class="w-50 mx-auto mb-0 text-secondary">
+          </div>
+        </div>
+      </div>
+      <div class="container overflow-hidden">
+        <div class="row gy-3 g-md-3 hcf-isotope-grid">
+          <div class="col-12 col-md-6 col-lg-3 hcf-isotope-item">
+            <a class="hcf-masonry-card rounded rounded-4" href="#!">
+              <img class="card-img img-fluid" loading="lazy" src="./assets/img/masonry/masonry-1/img-1.jpg" alt="">
+              <div class="card-overlay d-flex flex-column justify-content-center bg-dark p-4" style="--bs-bg-opacity: .5;">
+                <h3 class="card-title text-white text-center mb-1">Charming Concept</h3>
+                <div class="card-category text-white text-center">Photography</div>
+              </div>
+            </a>
+          </div>
+          <div class="col-12 col-md-6 col-lg-6 hcf-isotope-item">
+            <a class="hcf-masonry-card rounded rounded-4" href="#!">
+              <img class="card-img img-fluid" loading="lazy" src="./assets/img/masonry/masonry-1/img-2.jpg" alt="">
+              <div class="card-overlay d-flex flex-column justify-content-center bg-dark p-4" style="--bs-bg-opacity: .5;">
+                <h3 class="card-title text-white text-center mb-1">Linear Architecture</h3>
+                <div class="card-category text-white text-center">Inspiration</div>
+              </div>
+            </a>
+          </div>
+          <div class="col-12 col-md-6 col-lg-3 hcf-isotope-item">
+            <a class="hcf-masonry-card rounded rounded-4" href="#!">
+              <img class="card-img img-fluid" loading="lazy" src="./assets/img/masonry/masonry-1/img-3.jpg" alt="">
+              <div class="card-overlay d-flex flex-column justify-content-center bg-dark p-4" style="--bs-bg-opacity: .5;">
+                <h3 class="card-title text-white text-center mb-1">Endless Looks</h3>
+                <div class="card-category text-white text-center">Nature</div>
+              </div>
+            </a>
+          </div>
+          <div class="col-12 col-md-6 col-lg-3 hcf-isotope-item">
+            <a class="hcf-masonry-card rounded rounded-4" href="#!">
+              <img class="card-img img-fluid" loading="lazy" src="./assets/img/masonry/masonry-1/img-4.jpg" alt="">
+              <div class="card-overlay d-flex flex-column justify-content-center bg-dark p-4" style="--bs-bg-opacity: .5;">
+                <h3 class="card-title text-white text-center mb-1">Sleek Typography</h3>
+                <div class="card-category text-white text-center">Design</div>
+              </div>
+            </a>
+          </div>
+          <div class="col-12 col-md-6 col-lg-3 hcf-isotope-item">
+            <a class="hcf-masonry-card rounded rounded-4" href="#!">
+              <img class="card-img img-fluid" loading="lazy" src="./assets/img/masonry/masonry-1/img-5.jpg" alt="">
+              <div class="card-overlay d-flex flex-column justify-content-center bg-dark p-4" style="--bs-bg-opacity: .5;">
+                <h3 class="card-title text-white text-center mb-1">Ebony Vintage</h3>
+                <div class="card-category text-white text-center">Fashion</div>
+              </div>
+            </a>
+          </div>
+          <div class="col-12 col-md-6 col-lg-3 hcf-isotope-item">
+            <a class="hcf-masonry-card rounded rounded-4" href="#!">
+              <img class="card-img img-fluid" loading="lazy" src="./assets/img/masonry/masonry-1/img-6.jpg" alt="">
+              <div class="card-overlay d-flex flex-column justify-content-center bg-dark p-4" style="--bs-bg-opacity: .5;">
+                <h3 class="card-title text-white text-center mb-1">Orange Shine</h3>
+                <div class="card-category text-white text-center">Food</div>
+              </div>
+            </a>
+          </div>
+          <div class="col-12 col-md-6 col-lg-3 hcf-isotope-item">
+            <a class="hcf-masonry-card rounded rounded-4" href="#!">
+              <img class="card-img img-fluid" loading="lazy" src="./assets/img/masonry/masonry-1/img-7.jpg" alt="">
+              <div class="card-overlay d-flex flex-column justify-content-center bg-dark p-4" style="--bs-bg-opacity: .5;">
+                <h3 class="card-title text-white text-center mb-1">Boat Adventure</h3>
+                <div class="card-category text-white text-center">Health</div>
+              </div>
+            </a>
+          </div>
+          <div class="col-12 col-md-6 col-lg-3 hcf-isotope-item">
+            <a class="hcf-masonry-card rounded rounded-4" href="#!">
+              <img class="card-img img-fluid" loading="lazy" src="./assets/img/masonry/masonry-1/img-8.jpg" alt="">
+              <div class="card-overlay d-flex flex-column justify-content-center bg-dark p-4" style="--bs-bg-opacity: .5;">
+                <h3 class="card-title text-white text-center mb-1">Offroad Moves</h3>
+                <div class="card-category text-white text-center">Nature</div>
+              </div>
+            </a>
+          </div>
+          <div class="col-12 col-md-6 col-lg-3 hcf-isotope-item">
+            <a class="hcf-masonry-card rounded rounded-4" href="#!">
+              <img class="card-img img-fluid" loading="lazy" src="./assets/img/masonry/masonry-1/img-9.jpg" alt="">
+              <div class="card-overlay d-flex flex-column justify-content-center bg-dark p-4" style="--bs-bg-opacity: .5;">
+                <h3 class="card-title text-white text-center mb-1">Cozy Occupancy</h3>
+                <div class="card-category text-white text-center">Design</div>
+              </div>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>    
+</body>
+</html>
