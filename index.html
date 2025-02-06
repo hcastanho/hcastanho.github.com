@@ -1,69 +1,101 @@
-
 <!DOCTYPE html>
 <html lang="pt-PT">
-<head>
-<meta charset="UTF-8">
-<title>Castanho</title>
-<meta name="title" content="Castanho">
-<meta name="description" content="Castanho">
-<meta name="keywords" content="Castanho">
-<meta name="robots" content="index, follow">
-<meta name="language" content="Portuguese">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Arya&family=Barrio&family=Roboto:wght@700&display=swap" rel="stylesheet">
-<style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            font-family: 'roboto', sans-serif;
-            text-transform: uppercase;
-            background-color: #000000;
-        }
-
-        canvas {
-            display: block;
-             background-color:#000000;
-        }
-        h1 {
-            width: 100%;
-            display: block;
-            position: absolute;
-            top: 20%;
-            left: 0;
-            text-align: center;
-            font-size: 30px;
-            text-shadow: 0 0 50px #000;
-        }
+  <head>
+    <meta charset="UTF-8">
+    <title>Hugo Castanho</title>
+    <style>
+      body { margin: 0; overflow: hidden; background: #000; }
+      canvas { display: block; }
     </style>
-</head>
-<body>
-    <h1>Castanho</h1>
-<canvas id="generativeCanvas"></canvas>
-<script>
-        const canvas = document.getElementById('generativeCanvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        const colors = ['#6524BF', '#29A655', '#F2BF27', '#F27D16', '#F21616'];
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            for (let i = 0; i < 100; i++) {
-                const x = Math.random() * canvas.width;
-                const y = Math.random() * canvas.height;
-                const size = Math.random() * 80 + 5;
-                const color = colors[Math.floor(Math.random() * colors.length)];
+  </head>
+  <body>
+    <!-- Inclui a biblioteca p5.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.5.0/p5.min.js"></script>
+    <script>
+      let particles = [];
+      const numParticles = 10000;
 
-                ctx.beginPath();
-                ctx.arc(x, y, size, 0, Math.PI * 2);
-                ctx.fillStyle = color;
-                ctx.fill();
-            }
-
-            requestAnimationFrame(draw);
+      function setup() {
+        // Cria a tela com a largura e altura atuais da janela
+        createCanvas(windowWidth, windowHeight);
+        noSmooth(); // Desativa a suavização para efeito pixelado
+        
+        // Inicializa as partículas
+        for (let i = 0; i < numParticles; i++) {
+          let x = random(width);
+          let y = random(height);
+          particles.push(new Particle(x, y));
         }
-        draw();
+      }
+
+      function draw() {
+        background(0);
+
+        // Desenha as partículas
+        for (let p of particles) {
+          p.update();
+          p.show();
+        }
+
+        // Desenha o texto "CASTANHO.ME" centrado, apenas com contorno
+        textAlign(CENTER, CENTER);
+        textFont("Impact"); // É necessário ter a fonte instalada/localmente
+        stroke(255);        // Cor do contorno (branco)
+        noFill();           // Sem preenchimento
+        strokeWeight(2);    // Espessura do contorno
+        textSize(48);
+        text("CASTANHO.ME", width / 2, height / 2);
+      }
+
+      // Ajusta o canvas quando a janela é redimensionada
+      function windowResized() {
+        resizeCanvas(windowWidth, windowHeight);
+      }
+
+      class Particle {
+        constructor(x, y) {
+          this.pos = createVector(x, y);
+          this.origin = this.pos.copy();
+          this.vel = createVector(random(-1, 1), random(-1, 1));
+          this.acc = createVector();
+          this.size = 4; // Tamanho em "pixels"
+        }
+
+        update() {
+          // Força de repulsão em relação ao rato
+          let mousePos = createVector(mouseX, mouseY);
+          let d = dist(this.pos.x, this.pos.y, mousePos.x, mousePos.y);
+          const repulseDistance = 50;
+          if (d < repulseDistance) {
+            let force = p5.Vector.sub(this.pos, mousePos);
+            force.normalize();
+            // A intensidade da repulsão diminui gradualmente conforme afasta do cursor
+            force.mult(map(d, 0, repulseDistance, 5, 0));
+            this.acc.add(force);
+          }
+
+          // Força de retorno à posição original
+          let returnForce = p5.Vector.sub(this.origin, this.pos);
+          returnForce.mult(0.01);
+          this.acc.add(returnForce);
+
+          // Atualiza velocidade e posição
+          this.vel.add(this.acc);
+          this.vel.limit(3);
+          this.pos.add(this.vel);
+          this.acc.mult(0);
+
+          // Aplica fricção para suavizar o movimento
+          this.vel.mult(0.95);
+        }
+
+        show() {
+          noStroke();
+          fill(255);
+          // Desenha a partícula como um pequeno retângulo (pixel)
+          rect(this.pos.x, this.pos.y, this.size, this.size);
+        }
+      }
     </script>
-</body>
+  </body>
 </html>
