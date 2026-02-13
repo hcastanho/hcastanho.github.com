@@ -16,14 +16,20 @@
       
       #custom-cursor {
         position: fixed;
-        width: 30px;
-        height: 30px;
-        border: 2px solid rgba(0, 255, 255, 0.8);
+        width: 35px;
+        height: 35px;
+        border: 2px solid rgba(255, 50, 255, 0.9);
         border-radius: 50%;
         pointer-events: none;
         z-index: 10000;
-        transition: transform 0.1s ease;
-        box-shadow: 0 0 15px rgba(0, 255, 255, 0.6);
+        transition: all 0.1s ease;
+        box-shadow: 0 0 20px rgba(255, 50, 255, 0.8);
+        animation: pulse 1.5s infinite;
+      }
+      
+      @keyframes pulse {
+        0%, 100% { box-shadow: 0 0 20px rgba(255, 50, 255, 0.8); }
+        50% { box-shadow: 0 0 35px rgba(255, 50, 255, 1); }
       }
       
       #info {
@@ -31,225 +37,218 @@
         bottom: 20px;
         left: 50%;
         transform: translateX(-50%);
-        color: rgba(255, 255, 255, 0.5);
-        font-size: 12px;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 13px;
         z-index: 1000;
         text-align: center;
         pointer-events: none;
         font-family: Arial, sans-serif;
+        text-shadow: 0 0 10px rgba(255, 50, 255, 0.8);
       }
     </style>
   </head>
   <body>
     <div id="custom-cursor"></div>
-    <div id="info">Mova o cursor • Clique para explodir</div>
+    <div id="info">Mova o cursor • Clique para EXPLOSÃO ÉPICA</div>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.5.0/p5.min.js"></script>
     <script>
       let particles = [];
-      let textParticles = [];
-      const numParticles = 2500;
+      const numParticles = 2000;
       let explosionForce = 0;
       let colorShift = 0;
-      let warpIntensity = 0;
+      let explosionX = 0;
+      let explosionY = 0;
+      let shockwave = 0;
       
       function setup() {
         createCanvas(windowWidth, windowHeight);
         
-        // Inicializa as partículas de fundo
+        // Inicializa partículas em movimento constante
         for (let i = 0; i < numParticles; i++) {
           particles.push(new Particle(random(width), random(height)));
-        }
-        
-        // Cria partículas do texto
-        createTextParticles();
-      }
-      
-      function createTextParticles() {
-        textParticles = [];
-        
-        // Cria buffer de texto
-        let pg = createGraphics(600, 120);
-        pg.background(0);
-        pg.fill(255);
-        pg.textAlign(CENTER, CENTER);
-        pg.textSize(80);
-        pg.textStyle(BOLD);
-        pg.text("CASTANHO.ME", 300, 60);
-        
-        pg.loadPixels();
-        
-        // Amostra pixels do texto
-        let step = 3; // Densidade de partículas
-        for (let x = 0; x < pg.width; x += step) {
-          for (let y = 0; y < pg.height; y += step) {
-            let index = (x + y * pg.width) * 4;
-            let brightness = pg.pixels[index];
-            
-            if (brightness > 128) {
-              // Converte para coordenadas do canvas
-              let px = width / 2 - 300 + x;
-              let py = height / 2 - 60 + y;
-              textParticles.push(new TextParticle(px, py));
-            }
-          }
         }
       }
       
       function draw() {
-        background(0);
+        // Background com leve trail para efeito de movimento
+        fill(0, 0, 0, 40);
+        rect(0, 0, width, height);
         
-        colorShift += 1;
-        explosionForce *= 0.9;
-        warpIntensity *= 0.95;
+        colorShift += 2;
+        explosionForce *= 0.88;
+        shockwave += 15;
         
-        // Desenha partículas de fundo
+        // Desenha shockwave da explosão
+        if (shockwave < 500 && explosionForce > 5) {
+          noFill();
+          strokeWeight(3);
+          stroke(255, 100, 255, map(shockwave, 0, 500, 200, 0));
+          circle(explosionX, explosionY, shockwave);
+          strokeWeight(2);
+          stroke(100, 200, 255, map(shockwave, 0, 500, 150, 0));
+          circle(explosionX, explosionY, shockwave * 0.7);
+        }
+        
+        // Partículas de fundo vibrantes
         for (let p of particles) {
           p.update();
           p.show();
         }
         
-        // Desenha partículas do texto com efeito warp
-        push();
-        for (let tp of textParticles) {
-          tp.update();
-          tp.show();
-        }
-        pop();
+        // Texto SUPER legível e vibrante
+        drawVibrantText();
         
         // Cursor
         updateCursor();
       }
       
+      function drawVibrantText() {
+        push();
+        translate(width / 2, height / 2);
+        
+        let pulse = sin(frameCount * 0.05) * 3;
+        
+        // Glow externo MUITO vibrante
+        for (let i = 6; i > 0; i--) {
+          let glowSize = i * 6;
+          let glowAlpha = map(i, 0, 6, 150, 15);
+          
+          let hue = (colorShift * 3) % 360;
+          let r = sin(radians(hue)) * 127 + 128;
+          let g = sin(radians(hue + 120)) * 127 + 128;
+          let b = sin(radians(hue + 240)) * 127 + 128;
+          
+          stroke(r, g, b, glowAlpha);
+          strokeWeight(glowSize);
+          noFill();
+          textAlign(CENTER, CENTER);
+          textSize(90 + pulse);
+          textStyle(BOLD);
+          text("CASTANHO.ME", 0, 0);
+        }
+        
+        // Sombra colorida para profundidade
+        stroke(255, 0, 255, 180);
+        strokeWeight(8);
+        noFill();
+        textAlign(CENTER, CENTER);
+        textSize(90 + pulse);
+        textStyle(BOLD);
+        text("CASTANHO.ME", 2, 2);
+        
+        // Contorno branco brilhante
+        stroke(255, 255, 255, 255);
+        strokeWeight(5);
+        noFill();
+        text("CASTANHO.ME", 0, 0);
+        
+        // Preenchimento branco sólido para MÁXIMA legibilidade
+        noStroke();
+        fill(255, 255, 255, 255);
+        text("CASTANHO.ME", 0, 0);
+        
+        // Highlights cintilantes
+        let numSparkles = 8;
+        for (let i = 0; i < numSparkles; i++) {
+          let angle = (frameCount * 0.02 + i * TWO_PI / numSparkles);
+          let radius = 180 + sin(frameCount * 0.03 + i) * 20;
+          let x = cos(angle) * radius;
+          let y = sin(angle) * radius;
+          
+          let sparkleSize = 4 + sin(frameCount * 0.1 + i) * 2;
+          
+          noStroke();
+          fill(255, 255, 0, 200);
+          circle(x, y, sparkleSize * 2);
+          fill(255, 255, 255, 255);
+          circle(x, y, sparkleSize);
+        }
+        
+        pop();
+      }
+      
       function updateCursor() {
         let cursor = document.getElementById('custom-cursor');
         if (cursor) {
-          cursor.style.left = (mouseX - 15) + 'px';
-          cursor.style.top = (mouseY - 15) + 'px';
+          cursor.style.left = (mouseX - 17.5) + 'px';
+          cursor.style.top = (mouseY - 17.5) + 'px';
           
           if (mouseIsPressed) {
-            cursor.style.transform = 'scale(1.3)';
+            cursor.style.transform = 'scale(1.5)';
+            cursor.style.borderColor = 'rgba(255, 255, 0, 1)';
           } else {
             cursor.style.transform = 'scale(1)';
+            cursor.style.borderColor = 'rgba(255, 50, 255, 0.9)';
           }
         }
       }
       
       function mousePressed() {
-        explosionForce = 25;
-        warpIntensity = 1;
+        explosionForce = 35;
+        explosionX = mouseX;
+        explosionY = mouseY;
+        shockwave = 0;
         
         let mousePos = createVector(mouseX, mouseY);
         
-        // Explode partículas de fundo
+        // EXPLOSÃO ÉPICA
         for (let p of particles) {
           let d = dist(p.pos.x, p.pos.y, mouseX, mouseY);
-          if (d < 250) {
+          if (d < 400) {
             let force = p5.Vector.sub(p.pos, mousePos);
             force.normalize();
-            force.mult(map(d, 0, 250, 15, 3));
+            force.mult(map(d, 0, 400, 25, 5));
             p.vel.add(force);
           }
         }
         
-        // Explode partículas do texto
-        for (let tp of textParticles) {
-          let d = dist(tp.pos.x, tp.pos.y, mouseX, mouseY);
-          if (d < 300) {
-            let force = p5.Vector.sub(tp.pos, mousePos);
-            force.normalize();
-            force.mult(map(d, 0, 300, 20, 5));
-            tp.vel.add(force);
-          }
+        // Adiciona partículas extras na explosão
+        for (let i = 0; i < 50; i++) {
+          let angle = random(TWO_PI);
+          let speed = random(3, 10);
+          let px = mouseX + cos(angle) * 5;
+          let py = mouseY + sin(angle) * 5;
+          let newP = new Particle(px, py);
+          newP.vel.set(cos(angle) * speed, sin(angle) * speed);
+          newP.lifespan = 100;
+          particles.push(newP);
         }
       }
       
       function keyPressed() {
         if (key === ' ') {
-          for (let p of particles) {
-            p.pos = p.origin.copy();
-            p.vel.set(0, 0);
-          }
-          for (let tp of textParticles) {
-            tp.pos = tp.origin.copy();
-            tp.vel.set(0, 0);
-          }
-          warpIntensity = 0;
+          // Reset partículas que estão fora de bounds
+          particles = particles.filter(p => !p.lifespan || p.lifespan > 0);
         }
       }
       
       function windowResized() {
         resizeCanvas(windowWidth, windowHeight);
-        createTextParticles();
       }
       
       class Particle {
         constructor(x, y) {
           this.pos = createVector(x, y);
-          this.origin = this.pos.copy();
-          this.vel = createVector(0, 0);
+          this.vel = createVector(random(-0.5, 0.5), random(-0.5, 0.5));
           this.acc = createVector(0, 0);
-          this.size = random(2, 4);
+          this.size = random(2, 5);
           this.offset = random(1000);
+          this.lifespan = null;
+          this.rotation = random(TWO_PI);
+          this.rotSpeed = random(-0.05, 0.05);
         }
         
         update() {
+          // Movimento perpétuo vibrante
+          let flowAngle = noise(this.pos.x * 0.005, this.pos.y * 0.005, frameCount * 0.01) * TWO_PI * 2;
+          let flowForce = createVector(cos(flowAngle), sin(flowAngle));
+          flowForce.mult(0.3);
+          this.acc.add(flowForce);
+          
           let d = dist(this.pos.x, this.pos.y, mouseX, mouseY);
           
-          if (d < 100) {
-            let force = p5.Vector.sub(this.pos, createVector(mouseX, mouseY));
-            force.normalize();
-            force.mult(map(d, 0, 100, 10, 0));
-            this.acc.add(force);
-          }
-          
-          let returnForce = p5.Vector.sub(this.origin, this.pos);
-          returnForce.mult(0.01);
-          this.acc.add(returnForce);
-          
-          this.vel.add(this.acc);
-          this.vel.limit(4);
-          this.vel.mult(0.93);
-          this.pos.add(this.vel);
-          this.acc.mult(0);
-        }
-        
-        show() {
-          let d = dist(this.pos.x, this.pos.y, mouseX, mouseY);
-          
-          noStroke();
-          
-          if (d < 120) {
-            let intensity = map(d, 0, 120, 255, 100);
-            fill(255, intensity, 0, 220);
-            circle(this.pos.x, this.pos.y, this.size * 1.5);
-            fill(255, 255, 100, 255);
-            circle(this.pos.x, this.pos.y, this.size * 0.5);
-          } else {
-            let hue = (colorShift + this.offset) % 360;
-            let r = sin(radians(hue)) * 100 + 155;
-            let g = sin(radians(hue + 120)) * 100 + 155;
-            let b = sin(radians(hue + 240)) * 100 + 155;
-            
-            fill(r, g, b, 180);
-            circle(this.pos.x, this.pos.y, this.size);
-          }
-        }
-      }
-      
-      class TextParticle {
-        constructor(x, y) {
-          this.pos = createVector(x, y);
-          this.origin = this.pos.copy();
-          this.vel = createVector(0, 0);
-          this.acc = createVector(0, 0);
-          this.size = 3;
-        }
-        
-        update() {
-          let d = dist(this.pos.x, this.pos.y, mouseX, mouseY);
-          
-          // Repulsão do mouse
+          // Interação forte com mouse
           if (d < 150) {
             let force = p5.Vector.sub(this.pos, createVector(mouseX, mouseY));
             force.normalize();
@@ -257,67 +256,86 @@
             this.acc.add(force);
           }
           
-          // Força de retorno mais forte
-          let returnForce = p5.Vector.sub(this.origin, this.pos);
-          returnForce.mult(0.015);
-          this.acc.add(returnForce);
-          
           this.vel.add(this.acc);
           this.vel.limit(6);
-          this.vel.mult(0.9);
+          this.vel.mult(0.98);
           this.pos.add(this.vel);
           this.acc.mult(0);
+          
+          this.rotation += this.rotSpeed;
+          
+          // Lifespan para partículas de explosão
+          if (this.lifespan !== null) {
+            this.lifespan--;
+          }
+          
+          // Wrap around
+          if (this.pos.x < -10) this.pos.x = width + 10;
+          if (this.pos.x > width + 10) this.pos.x = -10;
+          if (this.pos.y < -10) this.pos.y = height + 10;
+          if (this.pos.y > height + 10) this.pos.y = -10;
         }
         
         show() {
-          // Efeito warp baseado na distância ao mouse
-          let d = dist(this.pos.x, this.pos.y, mouseX, mouseY);
-          let warp = 0;
+          if (this.lifespan !== null && this.lifespan <= 0) return;
           
-          if (d < 200 && warpIntensity > 0) {
-            warp = map(d, 0, 200, 20, 0) * warpIntensity;
-          }
+          let d = dist(this.pos.x, this.pos.y, mouseX, mouseY);
+          let alpha = this.lifespan !== null ? map(this.lifespan, 0, 100, 0, 255) : 255;
           
           push();
           translate(this.pos.x, this.pos.y);
+          rotate(this.rotation);
           
-          // Glow effect para partículas do texto
           noStroke();
           
-          if (d < 150) {
-            // Perto do mouse - efeito intenso
-            let intensity = map(d, 0, 150, 255, 100);
+          if (d < 180) {
+            // SUPER vibrante perto do mouse
+            let intensity = map(d, 0, 180, 255, 80);
             
             // Glow externo
-            fill(255, intensity, 0, 100);
-            circle(0, 0, this.size + warp + 6);
+            fill(255, intensity, 255, alpha * 0.6);
+            circle(0, 0, this.size * 4);
+            
+            // Glow médio
+            fill(255, 255, intensity, alpha * 0.8);
+            circle(0, 0, this.size * 2);
             
             // Partícula principal
-            fill(255, 255, 0, 255);
-            circle(0, 0, this.size + warp);
+            fill(255, 255, 100, alpha);
+            circle(0, 0, this.size);
             
             // Core brilhante
-            fill(255, 255, 255, 255);
-            circle(0, 0, (this.size + warp) * 0.5);
+            fill(255, 255, 255, alpha);
+            circle(0, 0, this.size * 0.4);
           } else {
-            // Longe - cor base do texto
-            let hue = (colorShift * 0.5) % 360;
-            let r = sin(radians(hue)) * 50 + 205;
-            let g = sin(radians(hue + 120)) * 50 + 205;
-            let b = sin(radians(hue + 240)) * 50 + 205;
+            // Cores vibrantes em movimento
+            let hue = (colorShift * 2 + this.offset) % 360;
+            let r = sin(radians(hue)) * 127 + 128;
+            let g = sin(radians(hue + 120)) * 127 + 128;
+            let b = sin(radians(hue + 240)) * 127 + 128;
             
-            // Glow sutil
-            fill(r, g, b, 80);
-            circle(0, 0, this.size + 4);
+            // Glow
+            fill(r, g, b, alpha * 0.4);
+            circle(0, 0, this.size * 2.5);
             
             // Partícula
-            fill(r, g, b, 255);
+            fill(r, g, b, alpha);
             circle(0, 0, this.size);
           }
           
           pop();
         }
       }
+      
+      // Limpa partículas mortas periodicamente
+      setInterval(() => {
+        particles = particles.filter(p => !p.lifespan || p.lifespan > 0);
+        if (particles.length < numParticles) {
+          for (let i = particles.length; i < numParticles; i++) {
+            particles.push(new Particle(random(width), random(height)));
+          }
+        }
+      }, 2000);
     </script>
   </body>
 </html>
