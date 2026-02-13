@@ -9,199 +9,138 @@
         margin: 0; 
         overflow: hidden; 
         background: #000; 
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-family: 'Arial Black', Impact, sans-serif;
         cursor: none;
       }
       canvas { display: block; }
       
       #custom-cursor {
         position: fixed;
-        width: 40px;
-        height: 40px;
+        width: 30px;
+        height: 30px;
         border: 2px solid rgba(0, 255, 255, 0.8);
         border-radius: 50%;
         pointer-events: none;
         z-index: 10000;
-        transition: transform 0.15s ease;
-        box-shadow: 0 0 20px rgba(0, 255, 255, 0.5),
-                    inset 0 0 20px rgba(0, 255, 255, 0.3);
-      }
-      
-      #custom-cursor::before {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 6px;
-        height: 6px;
-        background: cyan;
-        border-radius: 50%;
-        box-shadow: 0 0 10px cyan;
+        transition: transform 0.1s ease;
+        box-shadow: 0 0 15px rgba(0, 255, 255, 0.6);
       }
       
       #info {
         position: fixed;
-        bottom: 30px;
+        bottom: 20px;
         left: 50%;
         transform: translateX(-50%);
-        color: rgba(255, 255, 255, 0.6);
-        font-size: 14px;
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 12px;
         z-index: 1000;
         text-align: center;
         pointer-events: none;
-        text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        font-family: Arial, sans-serif;
       }
     </style>
   </head>
   <body>
     <div id="custom-cursor"></div>
-    <div id="info">Mova o cursor • Clique para explodir • Pressione ESPAÇO para resetar</div>
+    <div id="info">Mova o cursor • Clique para explodir</div>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.5.0/p5.min.js"></script>
     <script>
       let particles = [];
-      const numParticles = 12000;
-      let attractMode = false;
+      const numParticles = 3000; // Reduzido drasticamente
       let explosionForce = 0;
       let colorShift = 0;
-      let mouseTrail = [];
-      let glowIntensity = 0;
       
       function setup() {
         createCanvas(windowWidth, windowHeight);
-        colorMode(RGB);
         
         // Inicializa as partículas
         for (let i = 0; i < numParticles; i++) {
-          let x = random(width);
-          let y = random(height);
-          particles.push(new Particle(x, y));
+          particles.push(new Particle(random(width), random(height)));
         }
       }
       
       function draw() {
-        // Background com trail effect
-        fill(0, 0, 0, 25);
-        rect(0, 0, width, height);
+        // Background sólido para melhor performance
+        background(0);
         
-        // Atualiza shift de cor
-        colorShift += 0.5;
+        colorShift += 1;
         
-        // Desenha trail do mouse
-        drawMouseTrail();
-        
-        // Atualiza e desenha partículas
+        // Atualiza e desenha partículas (otimizado)
         for (let p of particles) {
           p.update();
           p.show();
         }
         
-        // Diminui força de explosão gradualmente
-        explosionForce *= 0.92;
-        glowIntensity *= 0.95;
+        explosionForce *= 0.9;
         
-        // Desenha o texto com efeito espetacular
-        drawSpectacularText();
+        // Texto espetacular mas otimizado
+        drawText();
+        
+        // Cursor
+        updateCursor();
       }
       
-      function drawMouseTrail() {
-        mouseTrail.push({x: mouseX, y: mouseY});
-        if (mouseTrail.length > 20) mouseTrail.shift();
-        
-        noFill();
-        for (let i = 0; i < mouseTrail.length - 1; i++) {
-          let alpha = map(i, 0, mouseTrail.length, 0, 100);
-          let weight = map(i, 0, mouseTrail.length, 1, 3);
-          stroke(0, 255, 255, alpha);
-          strokeWeight(weight);
-          line(mouseTrail[i].x, mouseTrail[i].y, 
-               mouseTrail[i + 1].x, mouseTrail[i + 1].y);
-        }
-      }
-      
-      function drawSpectacularText() {
+      function drawText() {
         push();
         translate(width / 2, height / 2);
         
-        // Efeito de glow múltiplo
-        for (let i = 5; i > 0; i--) {
-          let glowSize = i * 3;
-          let glowAlpha = map(i, 0, 5, 100, 10);
+        // Glow effect (reduzido a 3 camadas)
+        for (let i = 3; i > 0; i--) {
+          let glowSize = i * 4;
+          let glowAlpha = map(i, 0, 3, 120, 20);
           
-          // Cor que muda com o tempo
-          let r = sin(colorShift * 0.01) * 127 + 128;
-          let g = sin(colorShift * 0.01 + 2) * 127 + 128;
-          let b = sin(colorShift * 0.01 + 4) * 127 + 128;
+          let hue = (colorShift * 2) % 360;
+          let r = sin(radians(hue)) * 127 + 128;
+          let g = sin(radians(hue + 120)) * 127 + 128;
+          let b = sin(radians(hue + 240)) * 127 + 128;
           
           stroke(r, g, b, glowAlpha);
           strokeWeight(glowSize);
           noFill();
           textAlign(CENTER, CENTER);
-          textSize(80 + sin(frameCount * 0.05) * 5);
+          textSize(70);
           textStyle(BOLD);
           text("CASTANHO.ME", 0, 0);
         }
         
-        // Texto principal com gradiente simulado
-        for (let y = -2; y <= 2; y += 0.5) {
-          let alpha = map(abs(y), 0, 2, 255, 50);
-          let r = 255;
-          let g = 255 - abs(y) * 50;
-          let b = 255 - abs(y) * 100;
-          
-          stroke(r, g, b, alpha);
-          strokeWeight(3);
-          noFill();
-          textAlign(CENTER, CENTER);
-          textSize(80);
-          textStyle(BOLD);
-          text("CASTANHO.ME", 0, y);
-        }
-        
-        // Partículas extras ao redor do texto
-        if (glowIntensity > 0) {
-          for (let i = 0; i < 50; i++) {
-            let angle = random(TWO_PI);
-            let radius = random(150, 250);
-            let px = cos(angle) * radius;
-            let py = sin(angle) * radius;
-            
-            noStroke();
-            fill(255, 255, 0, glowIntensity);
-            circle(px, py, random(2, 6));
-          }
-        }
+        // Texto principal brilhante
+        stroke(255, 255, 255, 255);
+        strokeWeight(2);
+        fill(255);
+        textAlign(CENTER, CENTER);
+        textSize(70);
+        textStyle(BOLD);
+        text("CASTANHO.ME", 0, 0);
         
         pop();
-        
-        // Atualiza cursor customizado
+      }
+      
+      function updateCursor() {
         let cursor = document.getElementById('custom-cursor');
         if (cursor) {
-          cursor.style.left = (mouseX - 20) + 'px';
-          cursor.style.top = (mouseY - 20) + 'px';
+          cursor.style.left = (mouseX - 15) + 'px';
+          cursor.style.top = (mouseY - 15) + 'px';
           
           if (mouseIsPressed) {
-            cursor.style.transform = 'scale(1.5)';
-            cursor.style.borderColor = 'rgba(255, 255, 0, 1)';
+            cursor.style.transform = 'scale(1.3)';
           } else {
             cursor.style.transform = 'scale(1)';
-            cursor.style.borderColor = 'rgba(0, 255, 255, 0.8)';
           }
         }
       }
       
       function mousePressed() {
-        explosionForce = 50;
-        glowIntensity = 255;
+        explosionForce = 30;
         
-        // Cria ondas de choque
+        // Explosão otimizada
+        let mousePos = createVector(mouseX, mouseY);
         for (let p of particles) {
           let d = dist(p.pos.x, p.pos.y, mouseX, mouseY);
-          if (d < 200) {
-            let force = p5.Vector.sub(p.pos, createVector(mouseX, mouseY));
+          if (d < 250) {
+            let force = p5.Vector.sub(p.pos, mousePos);
             force.normalize();
-            force.mult(map(d, 0, 200, 20, 5));
+            force.mult(map(d, 0, 250, 15, 3));
             p.vel.add(force);
           }
         }
@@ -209,13 +148,10 @@
       
       function keyPressed() {
         if (key === ' ') {
-          // Reset das partículas
           for (let p of particles) {
             p.pos = p.origin.copy();
-            p.vel.mult(0);
+            p.vel.set(0, 0);
           }
-        } else if (key === 'a' || key === 'A') {
-          attractMode = !attractMode;
         }
       }
       
@@ -228,108 +164,57 @@
           this.pos = createVector(x, y);
           this.origin = this.pos.copy();
           this.vel = createVector(0, 0);
-          this.acc = createVector();
-          this.size = random(2, 5);
-          this.hue = random(360);
-          this.brightness = random(150, 255);
+          this.acc = createVector(0, 0);
+          this.size = random(2, 4);
+          this.offset = random(1000);
         }
         
         update() {
-          let mousePos = createVector(mouseX, mouseY);
-          let d = dist(this.pos.x, this.pos.y, mousePos.x, mousePos.y);
+          let d = dist(this.pos.x, this.pos.y, mouseX, mouseY);
           
-          // Força de repulsão/atração
-          const interactionDistance = 120;
-          
-          if (d < interactionDistance) {
-            let force = p5.Vector.sub(this.pos, mousePos);
+          // Interação com mouse
+          if (d < 100) {
+            let force = p5.Vector.sub(this.pos, createVector(mouseX, mouseY));
             force.normalize();
-            
-            if (attractMode) {
-              force.mult(-1);
-              force.mult(map(d, 0, interactionDistance, 8, 0));
-            } else {
-              force.mult(map(d, 0, interactionDistance, 12, 0));
-            }
-            
+            force.mult(map(d, 0, 100, 10, 0));
             this.acc.add(force);
           }
           
-          // Efeito de explosão
-          if (explosionForce > 0) {
-            let explosionCenter = createVector(mouseX, mouseY);
-            let explosionD = dist(this.pos.x, this.pos.y, explosionCenter.x, explosionCenter.y);
-            if (explosionD < 300) {
-              let force = p5.Vector.sub(this.pos, explosionCenter);
-              force.normalize();
-              force.mult(explosionForce * 0.5);
-              this.acc.add(force);
-            }
-          }
-          
-          // Força de retorno à origem
+          // Força de retorno
           let returnForce = p5.Vector.sub(this.origin, this.pos);
-          returnForce.mult(0.008);
+          returnForce.mult(0.01);
           this.acc.add(returnForce);
           
-          // Movimento orgânico adicional
-          let noiseVal1 = noise(this.pos.x * 0.01, frameCount * 0.01);
-          let noiseVal2 = noise(this.pos.y * 0.01, frameCount * 0.01);
-          let noiseForce = createVector(
-            map(noiseVal1, 0, 1, -0.5, 0.5),
-            map(noiseVal2, 0, 1, -0.5, 0.5)
-          );
-          this.acc.add(noiseForce);
-          
-          // Atualiza velocidade e posição
+          // Atualiza física
           this.vel.add(this.acc);
-          this.vel.limit(5);
+          this.vel.limit(4);
+          this.vel.mult(0.93);
           this.pos.add(this.vel);
           this.acc.mult(0);
-          
-          // Fricção
-          this.vel.mult(0.92);
-          
-          // Wrap around screen
-          if (this.pos.x < 0) this.pos.x = width;
-          if (this.pos.x > width) this.pos.x = 0;
-          if (this.pos.y < 0) this.pos.y = height;
-          if (this.pos.y > height) this.pos.y = 0;
         }
         
         show() {
-          // Calcula distância ao mouse para efeito de cor
           let d = dist(this.pos.x, this.pos.y, mouseX, mouseY);
           
-          // Cor baseada em distância ao mouse
-          let r, g, b, alpha;
-          
-          if (d < 150) {
-            // Próximo ao mouse: cores quentes brilhantes
-            r = map(d, 0, 150, 255, 100);
-            g = map(d, 0, 150, 255, 200);
-            b = map(d, 0, 150, 0, 255);
-            alpha = map(d, 0, 150, 255, 180);
-          } else {
-            // Longe do mouse: cores frias
-            r = map(sin(colorShift * 0.01 + this.hue), -1, 1, 50, 150);
-            g = map(cos(colorShift * 0.01 + this.hue), -1, 1, 100, 200);
-            b = this.brightness;
-            alpha = 200;
-          }
-          
-          // Glow effect
           noStroke();
-          fill(r, g, b, alpha * 0.3);
-          circle(this.pos.x, this.pos.y, this.size * 3);
           
-          // Partícula principal
-          fill(r, g, b, alpha);
-          circle(this.pos.x, this.pos.y, this.size);
-          
-          // Core brilhante
-          fill(255, 255, 255, alpha * 0.8);
-          circle(this.pos.x, this.pos.y, this.size * 0.4);
+          if (d < 120) {
+            // Perto do mouse - cores quentes
+            let intensity = map(d, 0, 120, 255, 100);
+            fill(255, intensity, 0, 220);
+            circle(this.pos.x, this.pos.y, this.size * 1.5);
+            fill(255, 255, 100, 255);
+            circle(this.pos.x, this.pos.y, this.size * 0.5);
+          } else {
+            // Longe - cores frias
+            let hue = (colorShift + this.offset) % 360;
+            let r = sin(radians(hue)) * 100 + 155;
+            let g = sin(radians(hue + 120)) * 100 + 155;
+            let b = sin(radians(hue + 240)) * 100 + 155;
+            
+            fill(r, g, b, 180);
+            circle(this.pos.x, this.pos.y, this.size);
+          }
         }
       }
     </script>
