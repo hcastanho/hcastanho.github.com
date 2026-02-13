@@ -2,395 +2,385 @@
 <html lang="pt-PT">
   <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hugo Castanho</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ACESSO DETECTADO</title>
     <style>
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { 
-        margin: 0; 
-        overflow: hidden; 
-        background: #000; 
-        font-family: 'Arial Black', Impact, sans-serif;
-        cursor: none;
-        touch-action: none;
-        -webkit-touch-callout: none;
-        -webkit-user-select: none;
-        user-select: none;
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
       }
-      canvas { display: block; }
+      
+      body {
+        background: #000;
+        color: #0f0;
+        font-family: 'Courier New', monospace;
+        overflow: hidden;
+        cursor: none;
+      }
+      
+      #terminal {
+        padding: 20px;
+        height: 100vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+        font-size: 14px;
+        line-height: 1.6;
+        animation: flicker 0.15s infinite;
+      }
+      
+      @keyframes flicker {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.97; }
+      }
+      
+      .line {
+        margin: 2px 0;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+      }
+      
+      .warning {
+        color: #ff0000;
+        font-weight: bold;
+        text-shadow: 0 0 5px #ff0000;
+        animation: blink 1s infinite;
+      }
+      
+      @keyframes blink {
+        0%, 50%, 100% { opacity: 1; }
+        25%, 75% { opacity: 0; }
+      }
+      
+      .header {
+        color: #ff0000;
+        font-size: 16px;
+        font-weight: bold;
+        text-shadow: 0 0 10px #ff0000;
+        margin: 10px 0;
+      }
+      
+      .success {
+        color: #0ff;
+        text-shadow: 0 0 5px #0ff;
+      }
+      
+      .data {
+        color: #fff;
+        text-shadow: 0 0 3px #0f0;
+      }
+      
+      .prompt {
+        color: #0f0;
+      }
+      
+      .cursor {
+        display: inline-block;
+        width: 8px;
+        height: 16px;
+        background: #0f0;
+        animation: cursor-blink 0.8s infinite;
+        margin-left: 2px;
+      }
+      
+      @keyframes cursor-blink {
+        0%, 50% { opacity: 1; }
+        51%, 100% { opacity: 0; }
+      }
+      
+      #scanlines {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          to bottom,
+          rgba(255, 255, 255, 0) 50%,
+          rgba(0, 255, 0, 0.02) 50%
+        );
+        background-size: 100% 4px;
+        pointer-events: none;
+        z-index: 1000;
+      }
       
       #custom-cursor {
         position: fixed;
-        width: 35px;
-        height: 35px;
-        border: 2px solid rgba(255, 50, 255, 0.9);
-        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        border: 2px solid #0f0;
         pointer-events: none;
         z-index: 10000;
-        transition: all 0.1s ease;
-        box-shadow: 0 0 20px rgba(255, 50, 255, 0.8);
-        animation: pulse 1.5s infinite;
+        box-shadow: 0 0 10px #0f0;
       }
       
-      @keyframes pulse {
-        0%, 100% { box-shadow: 0 0 20px rgba(255, 50, 255, 0.8); }
-        50% { box-shadow: 0 0 35px rgba(255, 50, 255, 1); }
+      ::-webkit-scrollbar {
+        width: 10px;
       }
       
-      #info {
-        position: fixed;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        color: rgba(255, 255, 255, 0.7);
-        font-size: 13px;
-        z-index: 1000;
-        text-align: center;
-        pointer-events: none;
-        font-family: Arial, sans-serif;
-        text-shadow: 0 0 10px rgba(255, 50, 255, 0.8);
-        padding: 0 10px;
+      ::-webkit-scrollbar-track {
+        background: #000;
       }
       
-      @media (max-width: 768px) {
-        #custom-cursor { display: none; }
-        #info { font-size: 11px; bottom: 15px; }
+      ::-webkit-scrollbar-thumb {
+        background: #0f0;
+        box-shadow: 0 0 10px #0f0;
       }
     </style>
   </head>
   <body>
+    <div id="scanlines"></div>
     <div id="custom-cursor"></div>
-    <div id="info">Toque/Clique para EXPLOSÃO ÉPICA</div>
+    <div id="terminal"></div>
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.5.0/p5.min.js"></script>
     <script>
-      let particles = [];
-      let numParticles;
-      let explosionForce = 0;
-      let colorShift = 0;
-      let explosionX = 0;
-      let explosionY = 0;
-      let shockwave = 0;
-      let isMobile = false;
-      let textRevealMask;
+      const terminal = document.getElementById('terminal');
+      let lineIndex = 0;
       
-      function setup() {
-        createCanvas(windowWidth, windowHeight);
-        
-        // Detecta mobile e ajusta partículas
-        isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        numParticles = isMobile ? 1000 : 2000;
-        
-        // Inicializa partículas
-        for (let i = 0; i < numParticles; i++) {
-          particles.push(new Particle(random(width), random(height)));
-        }
-        
-        // Cria máscara do texto
-        textRevealMask = createGraphics(width, height);
+      // Atualiza cursor customizado
+      document.addEventListener('mousemove', (e) => {
+        const cursor = document.getElementById('custom-cursor');
+        cursor.style.left = e.clientX - 10 + 'px';
+        cursor.style.top = e.clientY - 10 + 'px';
+      });
+      
+      function addLine(text, className = '', delay = 0) {
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            const line = document.createElement('div');
+            line.className = `line ${className}`;
+            line.textContent = text;
+            terminal.appendChild(line);
+            terminal.scrollTop = terminal.scrollHeight;
+            resolve();
+          }, delay);
+        });
       }
       
-      function draw() {
-        // Background com leve trail
-        fill(0, 0, 0, 40);
-        rect(0, 0, width, height);
-        
-        colorShift += 2;
-        explosionForce *= 0.88;
-        shockwave += 15;
-        
-        // Desenha shockwave da explosão
-        if (shockwave < 500 && explosionForce > 5) {
-          noFill();
-          strokeWeight(3);
-          stroke(255, 100, 255, map(shockwave, 0, 500, 200, 0));
-          circle(explosionX, explosionY, shockwave);
-          strokeWeight(2);
-          stroke(100, 200, 255, map(shockwave, 0, 500, 150, 0));
-          circle(explosionX, explosionY, shockwave * 0.7);
-        }
-        
-        // Atualiza máscara do texto
-        updateTextMask();
-        
-        // Partículas de fundo vibrantes
-        for (let p of particles) {
-          p.update();
-          p.show();
-        }
-        
-        // Desenha texto NEGRO com máscara de revelação
-        drawHiddenText();
-        
-        // Cursor (desktop only)
-        if (!isMobile) {
-          updateCursor();
-        }
+      function typeText(text, className = '', speed = 30) {
+        return new Promise((resolve) => {
+          const line = document.createElement('div');
+          line.className = `line ${className}`;
+          terminal.appendChild(line);
+          
+          let i = 0;
+          const cursor = document.createElement('span');
+          cursor.className = 'cursor';
+          
+          const interval = setInterval(() => {
+            if (i < text.length) {
+              line.textContent = text.substring(0, i + 1);
+              line.appendChild(cursor);
+              i++;
+              terminal.scrollTop = terminal.scrollHeight;
+            } else {
+              cursor.remove();
+              clearInterval(interval);
+              resolve();
+            }
+          }, speed);
+        });
       }
       
-      function updateTextMask() {
-        textRevealMask.clear();
-        textRevealMask.background(0, 0);
+      async function detectEverything() {
+        // Header assustador
+        await addLine('═'.repeat(80), 'warning');
+        await typeText('██╗    ██╗ █████╗ ██████╗ ███╗   ██╗██╗███╗   ██╗ ██████╗ ', 'warning', 20);
+        await typeText('██║    ██║██╔══██╗██╔══██╗████╗  ██║██║████╗  ██║██╔════╝ ', 'warning', 20);
+        await typeText('██║ █╗ ██║███████║██████╔╝██╔██╗ ██║██║██╔██╗ ██║██║  ███╗', 'warning', 20);
+        await typeText('██║███╗██║██╔══██║██╔══██╗██║╚██╗██║██║██║╚██╗██║██║   ██║', 'warning', 20);
+        await typeText('╚███╔███╔╝██║  ██║██║  ██║██║ ╚████║██║██║ ╚████║╚██████╔╝', 'warning', 20);
+        await typeText(' ╚══╝╚══╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝╚═╝  ╚═══╝ ╚═════╝ ', 'warning', 20);
+        await addLine('═'.repeat(80), 'warning');
+        await addLine('');
         
-        // Desenha áreas iluminadas onde há partículas próximas
-        for (let p of particles) {
-          let d = dist(p.pos.x, p.pos.y, width/2, height/2);
-          if (d < 350) { // Só partículas próximas ao centro revelam
-            let alpha = map(d, 0, 350, 180, 0);
-            textRevealMask.noStroke();
-            textRevealMask.fill(255, 255, 255, alpha);
-            textRevealMask.circle(p.pos.x, p.pos.y, p.size * 8);
+        await typeText('⚠️  ACESSO NÃO AUTORIZADO DETECTADO ⚠️', 'warning', 50);
+        await addLine('');
+        await typeText('Iniciando protocolo de rastreamento...', 'success', 40);
+        await addLine('');
+        
+        // Simula scanning
+        await typeText('[*] Estabelecendo conexão segura...', 'prompt', 30);
+        await addLine('[✓] Conexão estabelecida', 'success', 300);
+        await addLine('');
+        
+        await typeText('[*] Coletando informações do invasor...', 'prompt', 30);
+        await addLine('');
+        
+        // Obtém IP (usando API pública)
+        await addLine('┌─ INFORMAÇÃO DE REDE', 'header', 200);
+        try {
+          const ipResponse = await fetch('https://api.ipify.org?format=json');
+          const ipData = await ipResponse.json();
+          await addLine(`├─ IP Público: ${ipData.ip}`, 'data', 100);
+          
+          // Obtém geolocalização
+          const geoResponse = await fetch(`https://ipapi.co/${ipData.ip}/json/`);
+          const geoData = await geoResponse.json();
+          
+          await addLine(`├─ ISP: ${geoData.org || 'Desconhecido'}`, 'data', 100);
+          await addLine(`├─ Cidade: ${geoData.city || 'Desconhecida'}`, 'data', 100);
+          await addLine(`├─ Região: ${geoData.region || 'Desconhecida'}`, 'data', 100);
+          await addLine(`├─ País: ${geoData.country_name || 'Desconhecido'}`, 'data', 100);
+          await addLine(`├─ Código Postal: ${geoData.postal || 'Desconhecido'}`, 'data', 100);
+          await addLine(`├─ Coordenadas: ${geoData.latitude}, ${geoData.longitude}`, 'data', 100);
+          await addLine(`├─ Timezone: ${geoData.timezone || 'Desconhecido'}`, 'data', 100);
+          await addLine(`└─ ASN: ${geoData.asn || 'Desconhecido'}`, 'data', 100);
+        } catch (e) {
+          await addLine('├─ IP Público: [ERRO AO OBTER]', 'data', 100);
+          await addLine('└─ Localização: [PROTEGIDA]', 'data', 100);
+        }
+        
+        await addLine('');
+        
+        // Informações do navegador
+        await addLine('┌─ INFORMAÇÃO DO NAVEGADOR', 'header', 200);
+        await addLine(`├─ User Agent: ${navigator.userAgent}`, 'data', 100);
+        await addLine(`├─ Plataforma: ${navigator.platform}`, 'data', 100);
+        await addLine(`├─ Idioma: ${navigator.language}`, 'data', 100);
+        await addLine(`├─ Idiomas Aceitos: ${navigator.languages.join(', ')}`, 'data', 100);
+        await addLine(`├─ Online: ${navigator.onLine ? 'SIM' : 'NÃO'}`, 'data', 100);
+        await addLine(`├─ Cookies Habilitados: ${navigator.cookieEnabled ? 'SIM' : 'NÃO'}`, 'data', 100);
+        await addLine(`├─ DoNotTrack: ${navigator.doNotTrack || 'Não definido'}`, 'data', 100);
+        await addLine(`├─ Vendor: ${navigator.vendor}`, 'data', 100);
+        await addLine(`└─ Hardware Concurrency: ${navigator.hardwareConcurrency || 'Desconhecido'} cores`, 'data', 100);
+        await addLine('');
+        
+        // Informações de tela
+        await addLine('┌─ INFORMAÇÃO DO DISPLAY', 'header', 200);
+        await addLine(`├─ Resolução: ${screen.width}x${screen.height}`, 'data', 100);
+        await addLine(`├─ Resolução Disponível: ${screen.availWidth}x${screen.availHeight}`, 'data', 100);
+        await addLine(`├─ Profundidade de Cor: ${screen.colorDepth} bits`, 'data', 100);
+        await addLine(`├─ Profundidade de Pixel: ${screen.pixelDepth} bits`, 'data', 100);
+        await addLine(`├─ Ratio de Pixel: ${window.devicePixelRatio}`, 'data', 100);
+        await addLine(`├─ Orientação: ${screen.orientation ? screen.orientation.type : 'Desconhecida'}`, 'data', 100);
+        await addLine(`└─ Touch Screen: ${navigator.maxTouchPoints > 0 ? 'SIM (' + navigator.maxTouchPoints + ' pontos)' : 'NÃO'}`, 'data', 100);
+        await addLine('');
+        
+        // Informações da janela
+        await addLine('┌─ INFORMAÇÃO DA JANELA', 'header', 200);
+        await addLine(`├─ Tamanho Interno: ${window.innerWidth}x${window.innerHeight}`, 'data', 100);
+        await addLine(`├─ Tamanho Externo: ${window.outerWidth}x${window.outerHeight}`, 'data', 100);
+        await addLine(`├─ Posição: X=${window.screenX}, Y=${window.screenY}`, 'data', 100);
+        await addLine(`└─ Scroll: X=${window.scrollX}, Y=${window.scrollY}`, 'data', 100);
+        await addLine('');
+        
+        // Detecção de bateria (se disponível)
+        if ('getBattery' in navigator) {
+          try {
+            const battery = await navigator.getBattery();
+            await addLine('┌─ INFORMAÇÃO DE BATERIA', 'header', 200);
+            await addLine(`├─ Nível: ${(battery.level * 100).toFixed(0)}%`, 'data', 100);
+            await addLine(`├─ Carregando: ${battery.charging ? 'SIM' : 'NÃO'}`, 'data', 100);
+            await addLine(`├─ Tempo para Carregar: ${battery.chargingTime === Infinity ? 'N/A' : battery.chargingTime + 's'}`, 'data', 100);
+            await addLine(`└─ Tempo de Descarga: ${battery.dischargingTime === Infinity ? 'N/A' : battery.dischargingTime + 's'}`, 'data', 100);
+            await addLine('');
+          } catch (e) {}
+        }
+        
+        // Informações de conexão (se disponível)
+        if ('connection' in navigator || 'mozConnection' in navigator || 'webkitConnection' in navigator) {
+          const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+          await addLine('┌─ INFORMAÇÃO DE CONEXÃO', 'header', 200);
+          await addLine(`├─ Tipo: ${connection.effectiveType || 'Desconhecido'}`, 'data', 100);
+          await addLine(`├─ Downlink: ${connection.downlink || 'Desconhecido'} Mbps`, 'data', 100);
+          await addLine(`├─ RTT: ${connection.rtt || 'Desconhecido'} ms`, 'data', 100);
+          await addLine(`└─ Economia de Dados: ${connection.saveData ? 'ATIVADA' : 'DESATIVADA'}`, 'data', 100);
+          await addLine('');
+        }
+        
+        // Detecção de memória (se disponível)
+        if ('deviceMemory' in navigator) {
+          await addLine('┌─ INFORMAÇÃO DE HARDWARE', 'header', 200);
+          await addLine(`├─ Memória RAM: ${navigator.deviceMemory} GB`, 'data', 100);
+          await addLine(`└─ Cores de CPU: ${navigator.hardwareConcurrency}`, 'data', 100);
+          await addLine('');
+        }
+        
+        // Plugins instalados
+        if (navigator.plugins && navigator.plugins.length > 0) {
+          await addLine('┌─ PLUGINS DETECTADOS', 'header', 200);
+          for (let i = 0; i < Math.min(navigator.plugins.length, 10); i++) {
+            const prefix = i === Math.min(navigator.plugins.length, 10) - 1 ? '└─' : '├─';
+            await addLine(`${prefix} ${navigator.plugins[i].name}`, 'data', 50);
+          }
+          await addLine('');
+        }
+        
+        // Timezone
+        await addLine('┌─ INFORMAÇÃO TEMPORAL', 'header', 200);
+        const now = new Date();
+        await addLine(`├─ Data/Hora Local: ${now.toLocaleString('pt-PT')}`, 'data', 100);
+        await addLine(`├─ Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`, 'data', 100);
+        await addLine(`├─ Offset UTC: ${now.getTimezoneOffset() / -60} horas`, 'data', 100);
+        await addLine(`└─ Timestamp: ${now.getTime()}`, 'data', 100);
+        await addLine('');
+        
+        // Canvas Fingerprinting
+        await addLine('┌─ FINGERPRINT ÚNICO', 'header', 200);
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        ctx.textBaseline = 'top';
+        ctx.font = '14px Arial';
+        ctx.fillText('Fingerprint', 2, 2);
+        const fingerprint = canvas.toDataURL().slice(-50);
+        await addLine(`├─ Canvas Hash: ${fingerprint}`, 'data', 100);
+        
+        // WebGL info
+        try {
+          const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+          const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+          await addLine(`├─ GPU Vendor: ${gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL)}`, 'data', 100);
+          await addLine(`└─ GPU Renderer: ${gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL)}`, 'data', 100);
+        } catch (e) {
+          await addLine(`└─ GPU: [PROTEGIDA]`, 'data', 100);
+        }
+        await addLine('');
+        
+        // Permissões
+        await addLine('┌─ PERMISSÕES DO NAVEGADOR', 'header', 200);
+        const permissions = ['geolocation', 'notifications', 'camera', 'microphone'];
+        for (let i = 0; i < permissions.length; i++) {
+          try {
+            const result = await navigator.permissions.query({ name: permissions[i] });
+            const prefix = i === permissions.length - 1 ? '└─' : '├─';
+            await addLine(`${prefix} ${permissions[i]}: ${result.state.toUpperCase()}`, 'data', 100);
+          } catch (e) {
+            const prefix = i === permissions.length - 1 ? '└─' : '├─';
+            await addLine(`${prefix} ${permissions[i]}: DESCONHECIDO`, 'data', 100);
           }
         }
+        await addLine('');
+        
+        // Headers de referência
+        await addLine('┌─ INFORMAÇÃO DE NAVEGAÇÃO', 'header', 200);
+        await addLine(`├─ URL Atual: ${window.location.href}`, 'data', 100);
+        await addLine(`├─ Protocolo: ${window.location.protocol}`, 'data', 100);
+        await addLine(`├─ Host: ${window.location.host}`, 'data', 100);
+        await addLine(`├─ Referrer: ${document.referrer || 'Acesso direto'}`, 'data', 100);
+        await addLine(`└─ Histórico: ${window.history.length} entradas`, 'data', 100);
+        await addLine('');
+        
+        // Final assustador
+        await addLine('═'.repeat(80), 'warning', 500);
+        await typeText('⚠️  TODOS OS DADOS FORAM COLETADOS E ARMAZENADOS ⚠️', 'warning', 50);
+        await addLine('═'.repeat(80), 'warning');
+        await addLine('');
+        await typeText('[!] Você foi rastreado com sucesso.', 'warning', 40);
+        await typeText('[!] Esta sessão foi registrada.', 'warning', 40);
+        await typeText('[!] Seu endereço IP foi marcado.', 'warning', 40);
+        await addLine('');
+        await typeText('Encerrando conexão em 3...', 'success', 40);
+        await addLine('2...', 'success', 1000);
+        await addLine('1...', 'success', 1000);
+        await addLine('');
+        await typeText('████████████████████ 100% COMPLETO ████████████████████', 'warning', 30);
+        await addLine('');
+        await addLine('> _', 'prompt');
       }
       
-      function drawHiddenText() {
-        push();
-        
-        // Cria buffer do texto
-        let textBuffer = createGraphics(width, height);
-        textBuffer.clear();
-        textBuffer.translate(width / 2, height / 2);
-        
-        let pulse = sin(frameCount * 0.05) * 3;
-        let textSizeVal = isMobile ? 50 + pulse : 90 + pulse;
-        
-        // Glow colorido VIBRANTE (sempre visível)
-        for (let i = 6; i > 0; i--) {
-          let glowSize = i * (isMobile ? 4 : 6);
-          let glowAlpha = map(i, 0, 6, 150, 15);
-          
-          let hue = (colorShift * 3) % 360;
-          let r = sin(radians(hue)) * 127 + 128;
-          let g = sin(radians(hue + 120)) * 127 + 128;
-          let b = sin(radians(hue + 240)) * 127 + 128;
-          
-          textBuffer.stroke(r, g, b, glowAlpha);
-          textBuffer.strokeWeight(glowSize);
-          textBuffer.noFill();
-          textBuffer.textAlign(CENTER, CENTER);
-          textBuffer.textSize(textSizeVal);
-          textBuffer.textStyle(BOLD);
-          textBuffer.text("CASTANHO.ME", 0, 0);
-        }
-        
-        // Texto NEGRO (invisível contra fundo negro)
-        textBuffer.noStroke();
-        textBuffer.fill(0, 0, 0, 255);
-        textBuffer.textAlign(CENTER, CENTER);
-        textBuffer.textSize(textSizeVal);
-        textBuffer.textStyle(BOLD);
-        textBuffer.text("CASTANHO.ME", 0, 0);
-        
-        // Aplica máscara para revelar apenas onde há partículas
-        let maskedText = textBuffer.get();
-        maskedText.mask(textRevealMask);
-        
-        image(maskedText, 0, 0);
-        
-        pop();
-        
-        // Sparkles ao redor do texto
-        push();
-        translate(width / 2, height / 2);
-        let numSparkles = isMobile ? 5 : 8;
-        for (let i = 0; i < numSparkles; i++) {
-          let angle = (frameCount * 0.02 + i * TWO_PI / numSparkles);
-          let radius = (isMobile ? 120 : 180) + sin(frameCount * 0.03 + i) * 20;
-          let x = cos(angle) * radius;
-          let y = sin(angle) * radius;
-          
-          let sparkleSize = 3 + sin(frameCount * 0.1 + i) * 2;
-          
-          noStroke();
-          fill(255, 255, 0, 200);
-          circle(x, y, sparkleSize * 2);
-          fill(255, 255, 255, 255);
-          circle(x, y, sparkleSize);
-        }
-        pop();
-      }
-      
-      function updateCursor() {
-        let cursor = document.getElementById('custom-cursor');
-        if (cursor) {
-          cursor.style.left = (mouseX - 17.5) + 'px';
-          cursor.style.top = (mouseY - 17.5) + 'px';
-          
-          if (mouseIsPressed) {
-            cursor.style.transform = 'scale(1.5)';
-            cursor.style.borderColor = 'rgba(255, 255, 0, 1)';
-          } else {
-            cursor.style.transform = 'scale(1)';
-            cursor.style.borderColor = 'rgba(255, 50, 255, 0.9)';
-          }
-        }
-      }
-      
-      function createExplosion(x, y) {
-        explosionForce = 35;
-        explosionX = x;
-        explosionY = y;
-        shockwave = 0;
-        
-        let explosionPos = createVector(x, y);
-        
-        // EXPLOSÃO ÉPICA
-        for (let p of particles) {
-          let d = dist(p.pos.x, p.pos.y, x, y);
-          if (d < 400) {
-            let force = p5.Vector.sub(p.pos, explosionPos);
-            force.normalize();
-            force.mult(map(d, 0, 400, 25, 5));
-            p.vel.add(force);
-          }
-        }
-        
-        // Adiciona partículas extras na explosão
-        let extraParticles = isMobile ? 30 : 50;
-        for (let i = 0; i < extraParticles; i++) {
-          let angle = random(TWO_PI);
-          let speed = random(3, 10);
-          let px = x + cos(angle) * 5;
-          let py = y + sin(angle) * 5;
-          let newP = new Particle(px, py);
-          newP.vel.set(cos(angle) * speed, sin(angle) * speed);
-          newP.lifespan = 100;
-          particles.push(newP);
-        }
-      }
-      
-      function mousePressed() {
-        createExplosion(mouseX, mouseY);
-        return false;
-      }
-      
-      function touchStarted() {
-        for (let i = 0; i < touches.length; i++) {
-          createExplosion(touches[i].x, touches[i].y);
-        }
-        return false;
-      }
-      
-      function keyPressed() {
-        if (key === ' ') {
-          particles = particles.filter(p => !p.lifespan || p.lifespan > 0);
-        }
-      }
-      
-      function windowResized() {
-        resizeCanvas(windowWidth, windowHeight);
-        textRevealMask = createGraphics(width, height);
-      }
-      
-      class Particle {
-        constructor(x, y) {
-          this.pos = createVector(x, y);
-          this.vel = createVector(random(-0.5, 0.5), random(-0.5, 0.5));
-          this.acc = createVector(0, 0);
-          this.size = random(2, 5);
-          this.offset = random(1000);
-          this.lifespan = null;
-          this.rotation = random(TWO_PI);
-          this.rotSpeed = random(-0.05, 0.05);
-        }
-        
-        update() {
-          // Movimento perpétuo vibrante
-          let flowAngle = noise(this.pos.x * 0.005, this.pos.y * 0.005, frameCount * 0.01) * TWO_PI * 2;
-          let flowForce = createVector(cos(flowAngle), sin(flowAngle));
-          flowForce.mult(0.3);
-          this.acc.add(flowForce);
-          
-          let d = dist(this.pos.x, this.pos.y, mouseX, mouseY);
-          
-          // Interação forte com mouse/touch
-          let interactionX = isMobile && touches.length > 0 ? touches[0].x : mouseX;
-          let interactionY = isMobile && touches.length > 0 ? touches[0].y : mouseY;
-          d = dist(this.pos.x, this.pos.y, interactionX, interactionY);
-          
-          if (d < 150) {
-            let force = p5.Vector.sub(this.pos, createVector(interactionX, interactionY));
-            force.normalize();
-            force.mult(map(d, 0, 150, 15, 0));
-            this.acc.add(force);
-          }
-          
-          this.vel.add(this.acc);
-          this.vel.limit(6);
-          this.vel.mult(0.98);
-          this.pos.add(this.vel);
-          this.acc.mult(0);
-          
-          this.rotation += this.rotSpeed;
-          
-          if (this.lifespan !== null) {
-            this.lifespan--;
-          }
-          
-          // Wrap around
-          if (this.pos.x < -10) this.pos.x = width + 10;
-          if (this.pos.x > width + 10) this.pos.x = -10;
-          if (this.pos.y < -10) this.pos.y = height + 10;
-          if (this.pos.y > height + 10) this.pos.y = -10;
-        }
-        
-        show() {
-          if (this.lifespan !== null && this.lifespan <= 0) return;
-          
-          let interactionX = isMobile && touches.length > 0 ? touches[0].x : mouseX;
-          let interactionY = isMobile && touches.length > 0 ? touches[0].y : mouseY;
-          let d = dist(this.pos.x, this.pos.y, interactionX, interactionY);
-          let alpha = this.lifespan !== null ? map(this.lifespan, 0, 100, 0, 255) : 255;
-          
-          push();
-          translate(this.pos.x, this.pos.y);
-          rotate(this.rotation);
-          
-          noStroke();
-          
-          if (d < 180) {
-            // SUPER vibrante perto do mouse/touch
-            let intensity = map(d, 0, 180, 255, 80);
-            
-            fill(255, intensity, 255, alpha * 0.6);
-            circle(0, 0, this.size * 4);
-            
-            fill(255, 255, intensity, alpha * 0.8);
-            circle(0, 0, this.size * 2);
-            
-            fill(255, 255, 100, alpha);
-            circle(0, 0, this.size);
-            
-            fill(255, 255, 255, alpha);
-            circle(0, 0, this.size * 0.4);
-          } else {
-            // Cores vibrantes em movimento
-            let hue = (colorShift * 2 + this.offset) % 360;
-            let r = sin(radians(hue)) * 127 + 128;
-            let g = sin(radians(hue + 120)) * 127 + 128;
-            let b = sin(radians(hue + 240)) * 127 + 128;
-            
-            fill(r, g, b, alpha * 0.4);
-            circle(0, 0, this.size * 2.5);
-            
-            fill(r, g, b, alpha);
-            circle(0, 0, this.size);
-          }
-          
-          pop();
-        }
-      }
-      
-      // Limpa partículas mortas periodicamente
-      setInterval(() => {
-        particles = particles.filter(p => !p.lifespan || p.lifespan > 0);
-        if (particles.length < numParticles) {
-          for (let i = particles.length; i < numParticles; i++) {
-            particles.push(new Particle(random(width), random(height)));
-          }
-        }
-      }, 2000);
+      // Inicia o scanning
+      detectEverything();
     </script>
   </body>
 </html>
