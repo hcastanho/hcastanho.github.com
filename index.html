@@ -2,7 +2,7 @@
 <html lang="pt-PT">
   <head>
     <meta charset="UTF-8">
-    <title>Hugo Castanho - Portfolio Interativo</title>
+    <title>Hugo Castanho</title>
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body { 
@@ -61,7 +61,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.5.0/p5.min.js"></script>
     <script>
       let particles = [];
-      const numParticles = 15000;
+      const numParticles = 12000;
       let attractMode = false;
       let explosionForce = 0;
       let colorShift = 0;
@@ -70,8 +70,9 @@
       
       function setup() {
         createCanvas(windowWidth, windowHeight);
+        colorMode(RGB);
         
-        // Inicializa as partículas em formação de grid
+        // Inicializa as partículas
         for (let i = 0; i < numParticles; i++) {
           let x = random(width);
           let y = random(height);
@@ -81,7 +82,8 @@
       
       function draw() {
         // Background com trail effect
-        background(0, 0, 0, 25);
+        fill(0, 0, 0, 25);
+        rect(0, 0, width, height);
         
         // Atualiza shift de cor
         colorShift += 0.5;
@@ -101,9 +103,6 @@
         
         // Desenha o texto com efeito espetacular
         drawSpectacularText();
-        
-        // Atualiza cursor customizado
-        updateCustomCursor();
       }
       
       function drawMouseTrail() {
@@ -140,7 +139,7 @@
           noFill();
           textAlign(CENTER, CENTER);
           textSize(80 + sin(frameCount * 0.05) * 5);
-          textFont('Impact, Arial Black, sans-serif');
+          textStyle(BOLD);
           text("CASTANHO.ME", 0, 0);
         }
         
@@ -156,7 +155,7 @@
           noFill();
           textAlign(CENTER, CENTER);
           textSize(80);
-          textFont('Impact, Arial Black, sans-serif');
+          textStyle(BOLD);
           text("CASTANHO.ME", 0, y);
         }
         
@@ -175,19 +174,20 @@
         }
         
         pop();
-      }
-      
-      function updateCustomCursor() {
-        let cursor = document.getElementById('custom-cursor');
-        cursor.style.left = mouseX - 20 + 'px';
-        cursor.style.top = mouseY - 20 + 'px';
         
-        if (mouseIsPressed) {
-          cursor.style.transform = 'scale(1.5)';
-          cursor.style.borderColor = 'rgba(255, 255, 0, 1)';
-        } else {
-          cursor.style.transform = 'scale(1)';
-          cursor.style.borderColor = 'rgba(0, 255, 255, 0.8)';
+        // Atualiza cursor customizado
+        let cursor = document.getElementById('custom-cursor');
+        if (cursor) {
+          cursor.style.left = (mouseX - 20) + 'px';
+          cursor.style.top = (mouseY - 20) + 'px';
+          
+          if (mouseIsPressed) {
+            cursor.style.transform = 'scale(1.5)';
+            cursor.style.borderColor = 'rgba(255, 255, 0, 1)';
+          } else {
+            cursor.style.transform = 'scale(1)';
+            cursor.style.borderColor = 'rgba(0, 255, 255, 0.8)';
+          }
         }
       }
       
@@ -221,12 +221,6 @@
       
       function windowResized() {
         resizeCanvas(windowWidth, windowHeight);
-        
-        // Reposiciona partículas proporcionalmente
-        for (let p of particles) {
-          p.origin.x = random(width);
-          p.origin.y = random(height);
-        }
       }
       
       class Particle {
@@ -238,14 +232,13 @@
           this.size = random(2, 5);
           this.hue = random(360);
           this.brightness = random(150, 255);
-          this.baseSpeed = random(0.5, 2);
         }
         
         update() {
           let mousePos = createVector(mouseX, mouseY);
           let d = dist(this.pos.x, this.pos.y, mousePos.x, mousePos.y);
           
-          // Força de repulsão/atração baseada no modo
+          // Força de repulsão/atração
           const interactionDistance = 120;
           
           if (d < interactionDistance) {
@@ -274,17 +267,19 @@
             }
           }
           
-          // Força de retorno à origem (mais suave)
+          // Força de retorno à origem
           let returnForce = p5.Vector.sub(this.origin, this.pos);
           returnForce.mult(0.008);
           this.acc.add(returnForce);
           
           // Movimento orgânico adicional
-          let noise = createVector(
-            map(noise(this.pos.x * 0.01, frameCount * 0.01), 0, 1, -0.5, 0.5),
-            map(noise(this.pos.y * 0.01, frameCount * 0.01), 0, 1, -0.5, 0.5)
+          let noiseVal1 = noise(this.pos.x * 0.01, frameCount * 0.01);
+          let noiseVal2 = noise(this.pos.y * 0.01, frameCount * 0.01);
+          let noiseForce = createVector(
+            map(noiseVal1, 0, 1, -0.5, 0.5),
+            map(noiseVal2, 0, 1, -0.5, 0.5)
           );
-          this.acc.add(noise);
+          this.acc.add(noiseForce);
           
           // Atualiza velocidade e posição
           this.vel.add(this.acc);
