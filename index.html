@@ -182,6 +182,52 @@
         });
       }
       
+      // Função para obter IP com múltiplos serviços
+      async function getIPAddress() {
+        const services = [
+          { url: 'https://api.ipify.org?format=json', key: 'ip' },
+          { url: 'https://api.my-ip.io/v2/ip.json', key: 'ip' },
+          { url: 'https://ipapi.co/json/', key: 'ip' },
+          { url: 'https://api.bigdatacloud.net/data/client-ip', key: 'ipString' },
+          { url: 'https://geolocation-db.com/json/', key: 'IPv4' }
+        ];
+        
+        for (const service of services) {
+          try {
+            const response = await fetch(service.url);
+            const data = await response.json();
+            if (data[service.key]) {
+              return { ip: data[service.key], fullData: data };
+            }
+          } catch (e) {
+            console.log(`Serviço ${service.url} falhou, tentando próximo...`);
+          }
+        }
+        return null;
+      }
+      
+      // Função para obter geolocalização detalhada
+      async function getGeoLocation(ip) {
+        const services = [
+          `https://ipapi.co/${ip}/json/`,
+          `https://ipwhois.app/json/${ip}`,
+          `https://ip-api.com/json/${ip}`,
+        ];
+        
+        for (const service of services) {
+          try {
+            const response = await fetch(service);
+            const data = await response.json();
+            if (data && (data.city || data.country)) {
+              return data;
+            }
+          } catch (e) {
+            console.log(`Serviço de geo ${service} falhou, tentando próximo...`);
+          }
+        }
+        return null;
+      }
+      
       async function detectEverything() {
         // Header assustador
         await addLine('═'.repeat(80), 'warning');
@@ -205,30 +251,59 @@
         await addLine('');
         
         await typeText('[*] Coletando informações do invasor...', 'prompt', 30);
+        await typeText('[*] Triangulando localização...', 'prompt', 30);
         await addLine('');
         
-        // Obtém IP (usando API pública)
+        // Obtém IP usando múltiplos serviços
         await addLine('┌─ INFORMAÇÃO DE REDE', 'header', 200);
-        try {
-          const ipResponse = await fetch('https://api.ipify.org?format=json');
-          const ipData = await ipResponse.json();
-          await addLine(`├─ IP Público: ${ipData.ip}`, 'data', 100);
+        await typeText('├─ Escaneando endereço IP...', 'prompt', 20);
+        
+        const ipResult = await getIPAddress();
+        
+        if (ipResult && ipResult.ip) {
+          await addLine(`├─ IP Público: ${ipResult.ip}`, 'warning', 100);
           
-          // Obtém geolocalização
-          const geoResponse = await fetch(`https://ipapi.co/${ipData.ip}/json/`);
-          const geoData = await geoResponse.json();
+          // Obtém geolocalização detalhada
+          await typeText('├─ Consultando banco de dados de localização...', 'prompt', 20);
+          const geoData = await getGeoLocation(ipResult.ip);
           
-          await addLine(`├─ ISP: ${geoData.org || 'Desconhecido'}`, 'data', 100);
-          await addLine(`├─ Cidade: ${geoData.city || 'Desconhecida'}`, 'data', 100);
-          await addLine(`├─ Região: ${geoData.region || 'Desconhecida'}`, 'data', 100);
-          await addLine(`├─ País: ${geoData.country_name || 'Desconhecido'}`, 'data', 100);
-          await addLine(`├─ Código Postal: ${geoData.postal || 'Desconhecido'}`, 'data', 100);
-          await addLine(`├─ Coordenadas: ${geoData.latitude}, ${geoData.longitude}`, 'data', 100);
-          await addLine(`├─ Timezone: ${geoData.timezone || 'Desconhecido'}`, 'data', 100);
-          await addLine(`└─ ASN: ${geoData.asn || 'Desconhecido'}`, 'data', 100);
-        } catch (e) {
-          await addLine('├─ IP Público: [ERRO AO OBTER]', 'data', 100);
-          await addLine('└─ Localização: [PROTEGIDA]', 'data', 100);
+          if (geoData) {
+            await addLine(`├─ ISP: ${geoData.org || geoData.isp || geoData.connection?.isp || 'Desconhecido'}`, 'data', 100);
+            await addLine(`├─ Tipo de Conexão: ${geoData.connection?.connection_type || geoData.type || 'Desconhecido'}`, 'data', 100);
+            await addLine(`├─ Cidade: ${geoData.city || 'Desconhecida'}`, 'data', 100);
+            await addLine(`├─ Região: ${geoData.region || geoData.region_name || 'Desconhecida'}`, 'data', 100);
+            await addLine(`├─ País: ${geoData.country_name || geoData.country || 'Desconhecido'}`, 'data', 100);
+            await addLine(`├─ Código País: ${geoData.country_code || geoData.countryCode || 'XX'}`, 'data', 100);
+            await addLine(`├─ Continente: ${geoData.continent || 'Desconhecido'}`, 'data', 100);
+            await addLine(`├─ Código Postal: ${geoData.postal || geoData.zip || 'Desconhecido'}`, 'data', 100);
+            await addLine(`├─ Latitude: ${geoData.latitude || geoData.lat || 'Desconhecida'}`, 'data', 100);
+            await addLine(`├─ Longitude: ${geoData.longitude || geoData.lon || 'Desconhecida'}`, 'data', 100);
+            await addLine(`├─ Timezone: ${geoData.timezone || 'Desconhecido'}`, 'data', 100);
+            await addLine(`├─ UTC Offset: ${geoData.utc_offset || 'Desconhecido'}`, 'data', 100);
+            await addLine(`├─ Código de Área: ${geoData.calling_code || geoData.country_calling_code || 'Desconhecido'}`, 'data', 100);
+            await addLine(`├─ Moeda: ${geoData.currency || geoData.currency_name || 'Desconhecida'}`, 'data', 100);
+            await addLine(`├─ ASN: ${geoData.asn || 'Desconhecido'}`, 'data', 100);
+            
+            // Se tiver coordenadas, mostrar link do Google Maps
+            if (geoData.latitude && geoData.longitude) {
+              await addLine(`├─ Google Maps: https://maps.google.com/?q=${geoData.latitude},${geoData.longitude}`, 'warning', 100);
+            }
+          }
+          
+          // Informações adicionais do fullData se disponível
+          if (ipResult.fullData) {
+            if (ipResult.fullData.hostname) {
+              await addLine(`├─ Hostname: ${ipResult.fullData.hostname}`, 'data', 100);
+            }
+            if (ipResult.fullData.anycast !== undefined) {
+              await addLine(`├─ Anycast: ${ipResult.fullData.anycast ? 'SIM' : 'NÃO'}`, 'data', 100);
+            }
+          }
+          
+          await addLine(`└─ [LOCALIZAÇÃO RASTREADA COM SUCESSO]`, 'success', 100);
+        } else {
+          await addLine('├─ IP Público: [ERRO - Firewall detectado]', 'warning', 100);
+          await addLine('└─ Tentando bypass...', 'prompt', 100);
         }
         
         await addLine('');
@@ -237,32 +312,35 @@
         await addLine('┌─ INFORMAÇÃO DO NAVEGADOR', 'header', 200);
         await addLine(`├─ User Agent: ${navigator.userAgent}`, 'data', 100);
         await addLine(`├─ Plataforma: ${navigator.platform}`, 'data', 100);
-        await addLine(`├─ Idioma: ${navigator.language}`, 'data', 100);
+        await addLine(`├─ Idioma Principal: ${navigator.language}`, 'data', 100);
         await addLine(`├─ Idiomas Aceitos: ${navigator.languages.join(', ')}`, 'data', 100);
         await addLine(`├─ Online: ${navigator.onLine ? 'SIM' : 'NÃO'}`, 'data', 100);
         await addLine(`├─ Cookies Habilitados: ${navigator.cookieEnabled ? 'SIM' : 'NÃO'}`, 'data', 100);
-        await addLine(`├─ DoNotTrack: ${navigator.doNotTrack || 'Não definido'}`, 'data', 100);
+        await addLine(`├─ DoNotTrack: ${navigator.doNotTrack || 'Não configurado'}`, 'data', 100);
         await addLine(`├─ Vendor: ${navigator.vendor}`, 'data', 100);
+        await addLine(`├─ App Name: ${navigator.appName}`, 'data', 100);
+        await addLine(`├─ App Version: ${navigator.appVersion}`, 'data', 100);
+        await addLine(`├─ Product: ${navigator.product}`, 'data', 100);
         await addLine(`└─ Hardware Concurrency: ${navigator.hardwareConcurrency || 'Desconhecido'} cores`, 'data', 100);
         await addLine('');
         
         // Informações de tela
         await addLine('┌─ INFORMAÇÃO DO DISPLAY', 'header', 200);
-        await addLine(`├─ Resolução: ${screen.width}x${screen.height}`, 'data', 100);
+        await addLine(`├─ Resolução Total: ${screen.width}x${screen.height}`, 'data', 100);
         await addLine(`├─ Resolução Disponível: ${screen.availWidth}x${screen.availHeight}`, 'data', 100);
         await addLine(`├─ Profundidade de Cor: ${screen.colorDepth} bits`, 'data', 100);
         await addLine(`├─ Profundidade de Pixel: ${screen.pixelDepth} bits`, 'data', 100);
-        await addLine(`├─ Ratio de Pixel: ${window.devicePixelRatio}`, 'data', 100);
+        await addLine(`├─ Device Pixel Ratio: ${window.devicePixelRatio}`, 'data', 100);
         await addLine(`├─ Orientação: ${screen.orientation ? screen.orientation.type : 'Desconhecida'}`, 'data', 100);
-        await addLine(`└─ Touch Screen: ${navigator.maxTouchPoints > 0 ? 'SIM (' + navigator.maxTouchPoints + ' pontos)' : 'NÃO'}`, 'data', 100);
+        await addLine(`└─ Touch Screen: ${navigator.maxTouchPoints > 0 ? 'SIM (' + navigator.maxTouchPoints + ' pontos de toque)' : 'NÃO'}`, 'data', 100);
         await addLine('');
         
         // Informações da janela
-        await addLine('┌─ INFORMAÇÃO DA JANELA', 'header', 200);
+        await addLine('┌─ INFORMAÇÃO DA JANELA DO NAVEGADOR', 'header', 200);
         await addLine(`├─ Tamanho Interno: ${window.innerWidth}x${window.innerHeight}`, 'data', 100);
         await addLine(`├─ Tamanho Externo: ${window.outerWidth}x${window.outerHeight}`, 'data', 100);
-        await addLine(`├─ Posição: X=${window.screenX}, Y=${window.screenY}`, 'data', 100);
-        await addLine(`└─ Scroll: X=${window.scrollX}, Y=${window.scrollY}`, 'data', 100);
+        await addLine(`├─ Posição na Tela: X=${window.screenX}, Y=${window.screenY}`, 'data', 100);
+        await addLine(`└─ Posição de Scroll: X=${window.scrollX}, Y=${window.scrollY}`, 'data', 100);
         await addLine('');
         
         // Detecção de bateria (se disponível)
@@ -270,39 +348,44 @@
           try {
             const battery = await navigator.getBattery();
             await addLine('┌─ INFORMAÇÃO DE BATERIA', 'header', 200);
-            await addLine(`├─ Nível: ${(battery.level * 100).toFixed(0)}%`, 'data', 100);
-            await addLine(`├─ Carregando: ${battery.charging ? 'SIM' : 'NÃO'}`, 'data', 100);
-            await addLine(`├─ Tempo para Carregar: ${battery.chargingTime === Infinity ? 'N/A' : battery.chargingTime + 's'}`, 'data', 100);
-            await addLine(`└─ Tempo de Descarga: ${battery.dischargingTime === Infinity ? 'N/A' : battery.dischargingTime + 's'}`, 'data', 100);
+            await addLine(`├─ Nível de Carga: ${(battery.level * 100).toFixed(0)}%`, 'data', 100);
+            await addLine(`├─ Estado: ${battery.charging ? 'CARREGANDO' : 'DESCARREGANDO'}`, 'data', 100);
+            await addLine(`├─ Tempo para Carga Completa: ${battery.chargingTime === Infinity ? 'N/A' : Math.floor(battery.chargingTime / 60) + ' minutos'}`, 'data', 100);
+            await addLine(`└─ Tempo de Bateria Restante: ${battery.dischargingTime === Infinity ? 'N/A' : Math.floor(battery.dischargingTime / 60) + ' minutos'}`, 'data', 100);
             await addLine('');
-          } catch (e) {}
+          } catch (e) {
+            console.log('Bateria não disponível');
+          }
         }
         
         // Informações de conexão (se disponível)
         if ('connection' in navigator || 'mozConnection' in navigator || 'webkitConnection' in navigator) {
           const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-          await addLine('┌─ INFORMAÇÃO DE CONEXÃO', 'header', 200);
-          await addLine(`├─ Tipo: ${connection.effectiveType || 'Desconhecido'}`, 'data', 100);
-          await addLine(`├─ Downlink: ${connection.downlink || 'Desconhecido'} Mbps`, 'data', 100);
-          await addLine(`├─ RTT: ${connection.rtt || 'Desconhecido'} ms`, 'data', 100);
-          await addLine(`└─ Economia de Dados: ${connection.saveData ? 'ATIVADA' : 'DESATIVADA'}`, 'data', 100);
+          await addLine('┌─ INFORMAÇÃO DE CONEXÃO DE REDE', 'header', 200);
+          await addLine(`├─ Tipo Efetivo: ${connection.effectiveType || 'Desconhecido'}`, 'data', 100);
+          await addLine(`├─ Velocidade Download: ${connection.downlink || 'Desconhecida'} Mbps`, 'data', 100);
+          await addLine(`├─ Latência (RTT): ${connection.rtt || 'Desconhecida'} ms`, 'data', 100);
+          await addLine(`└─ Modo Economia de Dados: ${connection.saveData ? 'ATIVADO' : 'DESATIVADO'}`, 'data', 100);
           await addLine('');
         }
         
         // Detecção de memória (se disponível)
         if ('deviceMemory' in navigator) {
           await addLine('┌─ INFORMAÇÃO DE HARDWARE', 'header', 200);
-          await addLine(`├─ Memória RAM: ${navigator.deviceMemory} GB`, 'data', 100);
-          await addLine(`└─ Cores de CPU: ${navigator.hardwareConcurrency}`, 'data', 100);
+          await addLine(`├─ Memória RAM do Dispositivo: ${navigator.deviceMemory} GB`, 'data', 100);
+          await addLine(`└─ Núcleos de CPU: ${navigator.hardwareConcurrency}`, 'data', 100);
           await addLine('');
         }
         
         // Plugins instalados
         if (navigator.plugins && navigator.plugins.length > 0) {
-          await addLine('┌─ PLUGINS DETECTADOS', 'header', 200);
-          for (let i = 0; i < Math.min(navigator.plugins.length, 10); i++) {
-            const prefix = i === Math.min(navigator.plugins.length, 10) - 1 ? '└─' : '├─';
-            await addLine(`${prefix} ${navigator.plugins[i].name}`, 'data', 50);
+          await addLine('┌─ PLUGINS/EXTENSÕES DETECTADOS', 'header', 200);
+          for (let i = 0; i < Math.min(navigator.plugins.length, 15); i++) {
+            const prefix = i === Math.min(navigator.plugins.length, 15) - 1 ? '└─' : '├─';
+            await addLine(`${prefix} ${navigator.plugins[i].name} (${navigator.plugins[i].filename})`, 'data', 50);
+          }
+          if (navigator.plugins.length > 15) {
+            await addLine(`   ... e mais ${navigator.plugins.length - 15} plugins`, 'data', 50);
           }
           await addLine('');
         }
@@ -313,68 +396,113 @@
         await addLine(`├─ Data/Hora Local: ${now.toLocaleString('pt-PT')}`, 'data', 100);
         await addLine(`├─ Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`, 'data', 100);
         await addLine(`├─ Offset UTC: ${now.getTimezoneOffset() / -60} horas`, 'data', 100);
-        await addLine(`└─ Timestamp: ${now.getTime()}`, 'data', 100);
+        await addLine(`├─ Timestamp Unix: ${now.getTime()}`, 'data', 100);
+        await addLine(`└─ Dia da Semana: ${now.toLocaleDateString('pt-PT', { weekday: 'long' })}`, 'data', 100);
         await addLine('');
         
         // Canvas Fingerprinting
-        await addLine('┌─ FINGERPRINT ÚNICO', 'header', 200);
+        await addLine('┌─ FINGERPRINT ÚNICO DO DISPOSITIVO', 'header', 200);
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         ctx.textBaseline = 'top';
         ctx.font = '14px Arial';
+        ctx.fillStyle = '#f60';
+        ctx.fillRect(0, 0, 100, 50);
+        ctx.fillStyle = '#069';
         ctx.fillText('Fingerprint', 2, 2);
-        const fingerprint = canvas.toDataURL().slice(-50);
-        await addLine(`├─ Canvas Hash: ${fingerprint}`, 'data', 100);
+        const fingerprint = canvas.toDataURL();
+        const hash = fingerprint.split(',')[1].slice(-64);
+        await addLine(`├─ Canvas Fingerprint Hash: ${hash}`, 'warning', 100);
         
         // WebGL info
         try {
           const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
           const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
-          await addLine(`├─ GPU Vendor: ${gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL)}`, 'data', 100);
-          await addLine(`└─ GPU Renderer: ${gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL)}`, 'data', 100);
+          await addLine(`├─ GPU Vendor: ${gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL)}`, 'warning', 100);
+          await addLine(`├─ GPU Renderer: ${gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL)}`, 'warning', 100);
+          await addLine(`└─ WebGL Version: ${gl.getParameter(gl.VERSION)}`, 'data', 100);
         } catch (e) {
-          await addLine(`└─ GPU: [PROTEGIDA]`, 'data', 100);
+          await addLine(`└─ GPU: [INFORMAÇÃO BLOQUEADA/PROTEGIDA]`, 'data', 100);
         }
         await addLine('');
         
+        // Fontes do sistema (aproximação)
+        await addLine('┌─ DETECÇÃO DE FONTES DO SISTEMA', 'header', 200);
+        const fonts = ['Arial', 'Verdana', 'Times New Roman', 'Courier New', 'Georgia', 'Palatino', 'Garamond', 'Comic Sans MS', 'Trebuchet MS', 'Impact'];
+        const detectedFonts = [];
+        for (const font of fonts) {
+          const detected = document.fonts.check(`12px "${font}"`);
+          if (detected) detectedFonts.push(font);
+        }
+        await addLine(`└─ Fontes Detectadas: ${detectedFonts.join(', ')}`, 'data', 100);
+        await addLine('');
+        
         // Permissões
-        await addLine('┌─ PERMISSÕES DO NAVEGADOR', 'header', 200);
+        await addLine('┌─ ESTADO DAS PERMISSÕES DO NAVEGADOR', 'header', 200);
         const permissions = ['geolocation', 'notifications', 'camera', 'microphone'];
         for (let i = 0; i < permissions.length; i++) {
           try {
             const result = await navigator.permissions.query({ name: permissions[i] });
             const prefix = i === permissions.length - 1 ? '└─' : '├─';
-            await addLine(`${prefix} ${permissions[i]}: ${result.state.toUpperCase()}`, 'data', 100);
+            const state = result.state.toUpperCase();
+            const stateClass = state === 'GRANTED' ? 'warning' : 'data';
+            await addLine(`${prefix} ${permissions[i]}: ${state}`, stateClass, 100);
           } catch (e) {
             const prefix = i === permissions.length - 1 ? '└─' : '├─';
-            await addLine(`${prefix} ${permissions[i]}: DESCONHECIDO`, 'data', 100);
+            await addLine(`${prefix} ${permissions[i]}: NÃO SUPORTADO`, 'data', 100);
           }
         }
         await addLine('');
         
         // Headers de referência
-        await addLine('┌─ INFORMAÇÃO DE NAVEGAÇÃO', 'header', 200);
+        await addLine('┌─ INFORMAÇÃO DE NAVEGAÇÃO E SESSÃO', 'header', 200);
         await addLine(`├─ URL Atual: ${window.location.href}`, 'data', 100);
         await addLine(`├─ Protocolo: ${window.location.protocol}`, 'data', 100);
         await addLine(`├─ Host: ${window.location.host}`, 'data', 100);
-        await addLine(`├─ Referrer: ${document.referrer || 'Acesso direto'}`, 'data', 100);
-        await addLine(`└─ Histórico: ${window.history.length} entradas`, 'data', 100);
+        await addLine(`├─ Pathname: ${window.location.pathname}`, 'data', 100);
+        await addLine(`├─ Referrer: ${document.referrer || 'Acesso direto (sem referrer)'}`, 'data', 100);
+        await addLine(`├─ Histórico de Navegação: ${window.history.length} entradas`, 'data', 100);
+        await addLine(`└─ Modo de Navegação: ${window.navigator.webdriver ? 'AUTOMAÇÃO DETECTADA!' : 'Normal'}`, 'data', 100);
         await addLine('');
+        
+        // Media Devices
+        if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+          try {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            await addLine('┌─ DISPOSITIVOS DE MÍDIA DETECTADOS', 'header', 200);
+            const audioInputs = devices.filter(d => d.kind === 'audioinput').length;
+            const videoInputs = devices.filter(d => d.kind === 'videoinput').length;
+            const audioOutputs = devices.filter(d => d.kind === 'audiooutput').length;
+            await addLine(`├─ Microfones: ${audioInputs}`, 'data', 100);
+            await addLine(`├─ Câmeras: ${videoInputs}`, 'data', 100);
+            await addLine(`└─ Alto-falantes: ${audioOutputs}`, 'data', 100);
+            await addLine('');
+          } catch (e) {
+            console.log('Media devices não acessíveis');
+          }
+        }
         
         // Final assustador
         await addLine('═'.repeat(80), 'warning', 500);
         await typeText('⚠️  TODOS OS DADOS FORAM COLETADOS E ARMAZENADOS ⚠️', 'warning', 50);
         await addLine('═'.repeat(80), 'warning');
         await addLine('');
-        await typeText('[!] Você foi rastreado com sucesso.', 'warning', 40);
-        await typeText('[!] Esta sessão foi registrada.', 'warning', 40);
-        await typeText('[!] Seu endereço IP foi marcado.', 'warning', 40);
+        await typeText('[!] Você foi completamente rastreado.', 'warning', 40);
+        await typeText('[!] Todas as informações foram registradas no servidor.', 'warning', 40);
+        await typeText('[!] Seu endereço IP foi marcado como ACESSO NÃO AUTORIZADO.', 'warning', 40);
+        await typeText('[!] Localização geográfica confirmada e armazenada.', 'warning', 40);
+        await typeText('[!] Fingerprint do dispositivo salvo permanentemente.', 'warning', 40);
+        await addLine('');
+        await typeText('Preparando relatório para autoridades...', 'success', 40);
         await addLine('');
         await typeText('Encerrando conexão em 3...', 'success', 40);
         await addLine('2...', 'success', 1000);
         await addLine('1...', 'success', 1000);
         await addLine('');
         await typeText('████████████████████ 100% COMPLETO ████████████████████', 'warning', 30);
+        await addLine('');
+        await typeText('[SISTEMA] Dados transmitidos com sucesso.', 'success', 40);
+        await typeText('[SISTEMA] Sessão encerrada.', 'success', 40);
         await addLine('');
         await addLine('> _', 'prompt');
       }
