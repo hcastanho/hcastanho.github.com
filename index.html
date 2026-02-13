@@ -47,73 +47,78 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.5.0/p5.min.js"></script>
     <script>
       let particles = [];
-      const numParticles = 3000; // Reduzido drasticamente
+      let textParticles = [];
+      const numParticles = 2500;
       let explosionForce = 0;
       let colorShift = 0;
+      let warpIntensity = 0;
       
       function setup() {
         createCanvas(windowWidth, windowHeight);
         
-        // Inicializa as partículas
+        // Inicializa as partículas de fundo
         for (let i = 0; i < numParticles; i++) {
           particles.push(new Particle(random(width), random(height)));
+        }
+        
+        // Cria partículas do texto
+        createTextParticles();
+      }
+      
+      function createTextParticles() {
+        textParticles = [];
+        
+        // Cria buffer de texto
+        let pg = createGraphics(600, 120);
+        pg.background(0);
+        pg.fill(255);
+        pg.textAlign(CENTER, CENTER);
+        pg.textSize(80);
+        pg.textStyle(BOLD);
+        pg.text("CASTANHO.ME", 300, 60);
+        
+        pg.loadPixels();
+        
+        // Amostra pixels do texto
+        let step = 3; // Densidade de partículas
+        for (let x = 0; x < pg.width; x += step) {
+          for (let y = 0; y < pg.height; y += step) {
+            let index = (x + y * pg.width) * 4;
+            let brightness = pg.pixels[index];
+            
+            if (brightness > 128) {
+              // Converte para coordenadas do canvas
+              let px = width / 2 - 300 + x;
+              let py = height / 2 - 60 + y;
+              textParticles.push(new TextParticle(px, py));
+            }
+          }
         }
       }
       
       function draw() {
-        // Background sólido para melhor performance
         background(0);
         
         colorShift += 1;
+        explosionForce *= 0.9;
+        warpIntensity *= 0.95;
         
-        // Atualiza e desenha partículas (otimizado)
+        // Desenha partículas de fundo
         for (let p of particles) {
           p.update();
           p.show();
         }
         
-        explosionForce *= 0.9;
-        
-        // Texto espetacular mas otimizado
-        drawText();
+        // Desenha partículas do texto com efeito warp
+        push();
+        for (let tp of textParticles) {
+          tp.update();
+          tp.show();
+        }
+        pop();
         
         // Cursor
         updateCursor();
-      }
-      
-      function drawText() {
-        push();
-        translate(width / 2, height / 2);
-        
-        // Glow effect (reduzido a 3 camadas)
-        for (let i = 3; i > 0; i--) {
-          let glowSize = i * 4;
-          let glowAlpha = map(i, 0, 3, 120, 20);
-          
-          let hue = (colorShift * 2) % 360;
-          let r = sin(radians(hue)) * 127 + 128;
-          let g = sin(radians(hue + 120)) * 127 + 128;
-          let b = sin(radians(hue + 240)) * 127 + 128;
-          
-          stroke(r, g, b, glowAlpha);
-          strokeWeight(glowSize);
-          noFill();
-          textAlign(CENTER, CENTER);
-          textSize(70);
-          textStyle(BOLD);
-          text("CASTANHO.ME", 0, 0);
-        }
-        
-        // Texto principal brilhante
-        stroke(255, 255, 255, 255);
-        strokeWeight(2);
-        fill(255);
-        textAlign(CENTER, CENTER);
-        textSize(70);
-        textStyle(BOLD);
-        text("CASTANHO.ME", 0, 0);
-        
-        pop();
       }
       
       function updateCursor() {
@@ -131,10 +136,12 @@
       }
       
       function mousePressed() {
-        explosionForce = 30;
+        explosionForce = 25;
+        warpIntensity = 1;
         
-        // Explosão otimizada
         let mousePos = createVector(mouseX, mouseY);
+        
+        // Explode partículas de fundo
         for (let p of particles) {
           let d = dist(p.pos.x, p.pos.y, mouseX, mouseY);
           if (d < 250) {
@@ -142,6 +149,17 @@
             force.normalize();
             force.mult(map(d, 0, 250, 15, 3));
             p.vel.add(force);
+          }
+        }
+        
+        // Explode partículas do texto
+        for (let tp of textParticles) {
+          let d = dist(tp.pos.x, tp.pos.y, mouseX, mouseY);
+          if (d < 300) {
+            let force = p5.Vector.sub(tp.pos, mousePos);
+            force.normalize();
+            force.mult(map(d, 0, 300, 20, 5));
+            tp.vel.add(force);
           }
         }
       }
@@ -152,11 +170,17 @@
             p.pos = p.origin.copy();
             p.vel.set(0, 0);
           }
+          for (let tp of textParticles) {
+            tp.pos = tp.origin.copy();
+            tp.vel.set(0, 0);
+          }
+          warpIntensity = 0;
         }
       }
       
       function windowResized() {
         resizeCanvas(windowWidth, windowHeight);
+        createTextParticles();
       }
       
       class Particle {
@@ -172,7 +196,6 @@
         update() {
           let d = dist(this.pos.x, this.pos.y, mouseX, mouseY);
           
-          // Interação com mouse
           if (d < 100) {
             let force = p5.Vector.sub(this.pos, createVector(mouseX, mouseY));
             force.normalize();
@@ -180,12 +203,10 @@
             this.acc.add(force);
           }
           
-          // Força de retorno
           let returnForce = p5.Vector.sub(this.origin, this.pos);
           returnForce.mult(0.01);
           this.acc.add(returnForce);
           
-          // Atualiza física
           this.vel.add(this.acc);
           this.vel.limit(4);
           this.vel.mult(0.93);
@@ -199,14 +220,12 @@
           noStroke();
           
           if (d < 120) {
-            // Perto do mouse - cores quentes
             let intensity = map(d, 0, 120, 255, 100);
             fill(255, intensity, 0, 220);
             circle(this.pos.x, this.pos.y, this.size * 1.5);
             fill(255, 255, 100, 255);
             circle(this.pos.x, this.pos.y, this.size * 0.5);
           } else {
-            // Longe - cores frias
             let hue = (colorShift + this.offset) % 360;
             let r = sin(radians(hue)) * 100 + 155;
             let g = sin(radians(hue + 120)) * 100 + 155;
@@ -215,6 +234,88 @@
             fill(r, g, b, 180);
             circle(this.pos.x, this.pos.y, this.size);
           }
+        }
+      }
+      
+      class TextParticle {
+        constructor(x, y) {
+          this.pos = createVector(x, y);
+          this.origin = this.pos.copy();
+          this.vel = createVector(0, 0);
+          this.acc = createVector(0, 0);
+          this.size = 3;
+        }
+        
+        update() {
+          let d = dist(this.pos.x, this.pos.y, mouseX, mouseY);
+          
+          // Repulsão do mouse
+          if (d < 150) {
+            let force = p5.Vector.sub(this.pos, createVector(mouseX, mouseY));
+            force.normalize();
+            force.mult(map(d, 0, 150, 15, 0));
+            this.acc.add(force);
+          }
+          
+          // Força de retorno mais forte
+          let returnForce = p5.Vector.sub(this.origin, this.pos);
+          returnForce.mult(0.015);
+          this.acc.add(returnForce);
+          
+          this.vel.add(this.acc);
+          this.vel.limit(6);
+          this.vel.mult(0.9);
+          this.pos.add(this.vel);
+          this.acc.mult(0);
+        }
+        
+        show() {
+          // Efeito warp baseado na distância ao mouse
+          let d = dist(this.pos.x, this.pos.y, mouseX, mouseY);
+          let warp = 0;
+          
+          if (d < 200 && warpIntensity > 0) {
+            warp = map(d, 0, 200, 20, 0) * warpIntensity;
+          }
+          
+          push();
+          translate(this.pos.x, this.pos.y);
+          
+          // Glow effect para partículas do texto
+          noStroke();
+          
+          if (d < 150) {
+            // Perto do mouse - efeito intenso
+            let intensity = map(d, 0, 150, 255, 100);
+            
+            // Glow externo
+            fill(255, intensity, 0, 100);
+            circle(0, 0, this.size + warp + 6);
+            
+            // Partícula principal
+            fill(255, 255, 0, 255);
+            circle(0, 0, this.size + warp);
+            
+            // Core brilhante
+            fill(255, 255, 255, 255);
+            circle(0, 0, (this.size + warp) * 0.5);
+          } else {
+            // Longe - cor base do texto
+            let hue = (colorShift * 0.5) % 360;
+            let r = sin(radians(hue)) * 50 + 205;
+            let g = sin(radians(hue + 120)) * 50 + 205;
+            let b = sin(radians(hue + 240)) * 50 + 205;
+            
+            // Glow sutil
+            fill(r, g, b, 80);
+            circle(0, 0, this.size + 4);
+            
+            // Partícula
+            fill(r, g, b, 255);
+            circle(0, 0, this.size);
+          }
+          
+          pop();
         }
       }
     </script>
